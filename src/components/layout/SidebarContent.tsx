@@ -5,6 +5,9 @@ import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from './ThemeToggle'
+import { DropZone } from '@/components/ingestion/DropZone'
+import { AssetDropZone } from '@/components/ingestion/AssetDropZone'
+import { DataSummary } from '@/components/ingestion/DataSummary'
 
 function SidebarSection({
   label,
@@ -50,19 +53,19 @@ function CollapsedIcons() {
       <Separator className="my-1 w-6" />
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <Upload className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="right">Data upload (Phase 3)</TooltipContent>
+        <TooltipContent side="right">Data upload</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <FolderOpen className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="right">Asset upload (Phase 3)</TooltipContent>
+        <TooltipContent side="right">Asset upload</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -89,8 +92,9 @@ export function SidebarContent() {
         <Separator />
 
         <SidebarSection label="Data">
-          <PlaceholderSlot icon={Upload} label="Drop data.json" phase={3} />
-          <PlaceholderSlot icon={FolderOpen} label="Drop asset folder" phase={3} />
+          <DropZone />
+          <AssetDropZone />
+          <DataSummary />
         </SidebarSection>
 
         <Separator />

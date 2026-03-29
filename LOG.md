@@ -19,3 +19,13 @@
 - MainContent: resizable split pane (viewer top / chart bottom) via drag handle
 - ResizeHandle: custom draggable divider with min 120px per panel
 - Empty states: polished icons + guidance text for viewer and chart areas
+
+## Phase 3 — Data Ingestion (2026-03-29)
+- DropZone: drag-drop or click for data.json, visual states (idle/hover/loaded/error), clear button
+- AssetDropZone: drag-drop folder or click (webkitdirectory fallback), processes images + models
+- DataSummary: shows design count, parameter count, numeric vs categorical breakdown
+- data-slice updated: setRawData now initializes filteredIds, colorMetricKey, resets selection
+- clearData revokes all asset URLs and resets full store
+- file-ingestion.ts: auto-detect ID field, infer ColumnMeta (min/max), folder traversal
+- SidebarContent wired with real DropZone + AssetDropZone replacing placeholders
+- test-data/data.json: 20 sample designs with 6 numeric parameters
