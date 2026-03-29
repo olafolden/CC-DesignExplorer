@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { Box, BarChart3, MousePointerClick } from 'lucide-react'
+import { useAppStore } from '@/store'
 import { ResizeHandle } from './ResizeHandle'
+import { ParallelCoordinates } from '@/components/chart/ParallelCoordinates'
 
 const MIN_PANEL_HEIGHT = 120
 const DEFAULT_CHART_RATIO = 0.4
@@ -33,6 +35,7 @@ function ChartEmpty() {
 export function MainContent() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartRatio, setChartRatio] = useState(DEFAULT_CHART_RATIO)
+  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
 
   const handleResize = useCallback(
     (deltaY: number) => {
@@ -68,7 +71,7 @@ export function MainContent() {
         className="overflow-hidden border-t border-border bg-card"
         style={{ flex: `${chartRatio} 1 0%` }}
       >
-        <ChartEmpty />
+        {isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
       </div>
     </main>
   )

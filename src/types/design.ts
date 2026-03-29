@@ -2,6 +2,7 @@ export interface ColumnMeta {
   key: string
   label: string
   type: 'number' | 'string'
+  role: 'input' | 'output'
   min?: number
   max?: number
 }

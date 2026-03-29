@@ -6,11 +6,43 @@ interface ParseResult {
   columns: ColumnMeta[]
 }
 
-export function parseDesignData(jsonString: string): ParseResult {
-  const raw = JSON.parse(jsonString) as Record<string, unknown>[]
+interface WrappedFormat {
+  columns: {
+    inputs: string[]
+    outputs: string[]
+  }
+  data: Record<string, unknown>[]
+}
 
-  if (!Array.isArray(raw) || raw.length === 0) {
-    throw new Error('JSON must be a non-empty array of objects')
+function isWrappedFormat(json: unknown): json is WrappedFormat {
+  return (
+    typeof json === 'object' &&
+    json !== null &&
+    'columns' in json &&
+    'data' in json &&
+    Array.isArray((json as WrappedFormat).data)
+  )
+}
+
+export function parseDesignData(jsonString: string): ParseResult {
+  const json = JSON.parse(jsonString) as unknown
+
+  let raw: Record<string, unknown>[]
+  let inputKeys: Set<string> | null = null
+  let outputKeys: Set<string> | null = null
+
+  if (isWrappedFormat(json)) {
+    raw = json.data
+    inputKeys = new Set(json.columns.inputs)
+    outputKeys = new Set(json.columns.outputs)
+  } else if (Array.isArray(json)) {
+    raw = json as Record<string, unknown>[]
+  } else {
+    throw new Error('JSON must be an array of objects or a { columns, data } wrapper')
+  }
+
+  if (raw.length === 0) {
+    throw new Error('Data array must not be empty')
   }
 
   const hasId = 'id' in raw[0]
@@ -26,10 +58,17 @@ export function parseDesignData(jsonString: string): ParseResult {
       const values = raw.map((r) => r[key])
       const isNumeric = values.every((v) => typeof v === 'number')
 
+      // Determine role: explicit from wrapper, or infer
+      let role: 'input' | 'output' = 'input'
+      if (inputKeys && outputKeys) {
+        role = outputKeys.has(key) ? 'output' : inputKeys.has(key) ? 'input' : 'input'
+      }
+
       const col: ColumnMeta = {
         key,
         label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
         type: isNumeric ? 'number' : 'string',
+        role,
       }
 
       if (isNumeric) {
@@ -41,7 +80,12 @@ export function parseDesignData(jsonString: string): ParseResult {
       return col
     })
 
-  return { data, columns }
+  // Sort: inputs first, then outputs (preserving order within each group)
+  const inputCols = columns.filter((c) => c.role === 'input')
+  const outputCols = columns.filter((c) => c.role === 'output')
+  const sortedColumns = [...inputCols, ...outputCols]
+
+  return { data, columns: sortedColumns }
 }
 
 interface FileEntry {
@@ -95,7 +139,7 @@ export async function processAssetDrop(
     .map((item) => item.webkitGetAsEntry?.())
     .filter((e): e is FileSystemEntry => e != null)
 
-  let allFiles: FileEntry[] = []
+  const allFiles: FileEntry[] = []
 
   for (const entry of entries) {
     if (entry.isDirectory) {

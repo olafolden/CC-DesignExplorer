@@ -29,3 +29,16 @@
 - file-ingestion.ts: auto-detect ID field, infer ColumnMeta (min/max), folder traversal
 - SidebarContent wired with real DropZone + AssetDropZone replacing placeholders
 - test-data/data.json: 20 sample designs with 6 numeric parameters
+
+## Phase 4 — Parallel Coordinates Chart (2026-03-29)
+- ColumnMeta: added `role: 'input' | 'output'` field
+- JSON format: supports `{ columns: { inputs, outputs }, data }` wrapper (backwards compatible with flat arrays)
+- file-ingestion: parses wrapper format, sorts columns inputs-first then outputs
+- test-data: 4 input params (floor_area, num_floors, glazing_ratio, wall_thickness) + 5 outputs (cost, carbon, energy_use, daylight_factor, structural_weight)
+- ParallelCoordinates: ECharts parallel plot with `notMerge`, `lazyUpdate`
+- Axis coloring: input axes sky-blue, output axes amber — labels and axis lines
+- useChartOption: memoized option builder, color-maps lines by selected metric (blue-to-red HSL)
+- useChartEvents: `axisareaselected` brush handler (debounced via rAF) -> store, click -> select design
+- Filtered lines dim to 0.04 opacity, active lines at 0.55
+- DataSummary: now shows input count (sky) and output count (amber) instead of numeric/categorical
+- MainContent: renders chart when data loaded, empty state otherwise
