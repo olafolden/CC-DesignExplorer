@@ -1,23 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
-import { Box, BarChart3, MousePointerClick } from 'lucide-react'
+import { BarChart3, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { ResizeHandle } from './ResizeHandle'
 import { ParallelCoordinates } from '@/components/chart/ParallelCoordinates'
+import { ViewerPanel } from '@/components/viewer/ViewerPanel'
 
 const MIN_PANEL_HEIGHT = 120
 const DEFAULT_CHART_RATIO = 0.4
-
-function ViewerEmpty() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-muted-foreground select-none">
-      <Box className="h-16 w-16 mb-4 opacity-15 stroke-[1.2]" />
-      <p className="text-sm font-medium">2D / 3D Viewer</p>
-      <p className="text-xs mt-1 text-muted-foreground/60">
-        Select a design from the chart to preview
-      </p>
-    </div>
-  )
-}
 
 function ChartEmpty() {
   return (
@@ -61,7 +50,7 @@ export function MainContent() {
         className="overflow-hidden bg-background"
         style={{ flex: `${1 - chartRatio} 1 0%` }}
       >
-        <ViewerEmpty />
+        <ViewerPanel />
       </div>
 
       <ResizeHandle onResize={handleResize} />

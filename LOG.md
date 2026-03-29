@@ -42,3 +42,14 @@
 - Filtered lines dim to 0.04 opacity, active lines at 0.55
 - DataSummary: now shows input count (sky) and output count (amber) instead of numeric/categorical
 - MainContent: renders chart when data loaded, empty state otherwise
+
+## Phase 5 — 2D/3D Viewer (2026-03-29)
+- ViewerPanel: orchestrates 2D/3D display based on viewMode + selected/hovered design ID
+- ViewerToolbar: 2D/3D segmented toggle, displays selected design ID badge
+- ImageViewer: renders image from assetMap blob URL, fade transition, skeleton loader, "no image" fallback
+- ModelViewer: R3F Canvas with frameloop=demand, dpr=[1,2], antialias
+- ModelScene: ambient + directional lights, OrbitControls, Environment preset=studio, Suspense with wireframe fallback
+- DesignModel: useGLTF for GLB loading, auto-center/scale, applies color metric to mesh materials
+- Color mapping: same blue-to-red scale from chart applied to 3D mesh material
+- Hover preview: hoveredDesignId takes priority over selectedDesignId for live preview
+- Empty states: context-aware messages (no data loaded vs no design selected)
