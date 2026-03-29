@@ -9,8 +9,8 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-border bg-sidebar-background text-sidebar-foreground transition-all duration-200',
-        collapsed ? 'w-14' : 'w-64'
+        'flex flex-col border-r border-border bg-sidebar-background text-sidebar-foreground transition-[width] duration-200 ease-in-out overflow-hidden shrink-0',
+        collapsed ? 'w-12' : 'w-64'
       )}
     >
       <SidebarHeader />
