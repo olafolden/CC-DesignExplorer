@@ -390,17 +390,18 @@ const store = useAppStore();
 
 **Goal**: Browse filtered designs visually and select by name.
 
-1. Build `DesignSelector` — searchable input + dropdown list in sidebar, filters design IDs by substring
+1. Build `DesignSelector` — searchable input + dropdown list in sidebar, filters design IDs by substring, X button to clear selection
 2. Extend `viewMode` to `'2d' | '3d' | 'catalogue'`
 3. Build `CatalogueView` — responsive thumbnail grid of filtered designs' 2D images
 4. Add LayoutGrid button to ViewerToolbar segmented toggle
-5. Thumbnail click -> `setSelectedDesignId(id)` + switch to 2D view
+5. Thumbnail click -> `setSelectedDesignId(id)` (stays in catalogue view)
 6. Thumbnail hover -> updates DesignInfo in sidebar
 7. Color metric shown as thin color bar on each thumbnail
-8. Selection highlight: second ECharts series renders selected line with bright thick stroke + glow (z=2)
-9. Catalogue auto-scrolls selected thumbnail into view on external selection (chart click, DesignSelector)
+8. Thumbnail 3D button (top-right, visible on hover) -> selects design + switches to 3D viewer
+9. Selection highlight: second ECharts series renders selected line with bright thick stroke + glow (z=2)
+10. Catalogue auto-scrolls selected thumbnail into view on external selection (chart click, DesignSelector)
 
-**Verify**: Search designs by name, browse catalogue, click thumbnail to view detail. Selected design highlighted in chart and catalogue from any selection source.
+**Verify**: Search designs by name, browse catalogue, click thumbnail to select (stays in catalogue). Use 3D button on thumbnail to jump to 3D viewer. Clear selection via X button in DesignSelector. Selected design highlighted in chart and catalogue from any selection source.
 
 ---
 

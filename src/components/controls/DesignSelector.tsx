@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
 
@@ -48,11 +48,24 @@ export function DesignSelector() {
           }}
           onFocus={() => setOpen(true)}
           className={cn(
-            'w-full h-8 rounded-md border border-input bg-transparent pl-7 pr-3 text-xs',
+            'w-full h-8 rounded-md border border-input bg-transparent pl-7 text-xs',
+            selectedDesignId ? 'pr-7' : 'pr-3',
             'placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring',
             selectedDesignId && !query && 'placeholder:text-foreground placeholder:font-mono'
           )}
         />
+        {selectedDesignId && (
+          <button
+            onClick={() => {
+              setSelectedDesignId(null)
+              setQuery('')
+              setOpen(false)
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
       {open && filtered.length > 0 && (

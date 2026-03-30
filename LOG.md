@@ -72,7 +72,9 @@
 - DesignSelector: searchable dropdown in sidebar, filters design IDs by substring, click to select
 - CatalogueView: responsive thumbnail grid showing filtered designs' 2D images
 - viewMode extended to '2d' | '3d' | 'catalogue' with LayoutGrid button in ViewerToolbar
-- Thumbnail click switches to 2D single-design view, hover updates DesignInfo
+- DesignSelector: X button to clear selection (deselect highlighted design in PCP)
+- Thumbnail click selects design in catalogue (stays in catalogue view), hover updates DesignInfo
+- Catalogue thumbnails: 3D button appears on hover (top-right) to jump directly to 3D viewer
 - Color metric shown as thin color bar on each thumbnail card
 - Selection highlight: selected design rendered as bright thick line (2nd ECharts series, z=2) with glow
 - Catalogue highlights selected thumbnail with ring + auto-scrolls into view on external selection

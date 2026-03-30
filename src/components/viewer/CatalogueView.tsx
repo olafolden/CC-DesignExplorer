@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ImageOff } from 'lucide-react'
+import { ImageOff, Box } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useColorScale } from '@/hooks/useColorScale'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -52,13 +52,14 @@ export function CatalogueView() {
             }
           }
 
+          const hasModel = !!assets?.modelUrl
+
           return (
             <button
               key={design.id}
               ref={isSelected ? selectedRef : undefined}
               onClick={() => {
                 setSelectedDesignId(design.id)
-                setViewMode('2d')
               }}
               onMouseEnter={() => setHoveredDesignId(design.id)}
               onMouseLeave={() => setHoveredDesignId(null)}
@@ -68,6 +69,23 @@ export function CatalogueView() {
                 isSelected && 'ring-2 ring-primary'
               )}
             >
+              {/* 3D button */}
+              {hasModel && (
+                <div
+                  className="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedDesignId(design.id)
+                    setViewMode('3d')
+                  }}
+                >
+                  <div className="flex items-center gap-0.5 rounded px-1.5 py-0.5 bg-background/80 border border-border text-[10px] font-medium text-foreground hover:bg-background shadow-sm cursor-pointer">
+                    <Box className="h-3 w-3" />
+                    3D
+                  </div>
+                </div>
+              )}
+
               {/* Color bar */}
               {colorBar && (
                 <div
