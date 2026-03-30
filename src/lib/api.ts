@@ -103,3 +103,34 @@ export async function uploadAsset(
 export async function fetchAssetUrls(datasetId: string): Promise<AssetMap> {
   return apiFetch(`/api/assets/batch-urls?datasetId=${encodeURIComponent(datasetId)}`)
 }
+
+// Preferences APIs
+
+export interface UserPreferences {
+  theme: 'light' | 'dark'
+  default_project_id: string | null
+}
+
+export async function fetchPreferences(): Promise<UserPreferences> {
+  return apiFetch('/api/preferences')
+}
+
+export async function updatePreferences(prefs: Partial<UserPreferences>): Promise<void> {
+  await apiFetch('/api/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(prefs),
+  })
+}
+
+// Dataset listing for a project
+
+export interface DatasetSummary {
+  id: string
+  name: string
+  row_count: number
+  created_at: string
+}
+
+export async function fetchProjectDatasets(projectId: string): Promise<DatasetSummary[]> {
+  return apiFetch(`/api/projects/${projectId}/datasets`)
+}

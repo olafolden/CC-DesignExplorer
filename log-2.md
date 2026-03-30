@@ -50,3 +50,14 @@
 - Supabase Storage RLS policies added: INSERT/UPDATE/SELECT/DELETE scoped to user's own folder
 - Upload route: File converted to Buffer for Next.js compatibility, design key sanitized
 - Build passes, TypeScript clean
+
+## Phase 4 — Multi-User + Projects (2026-03-30)
+- Project selector in sidebar: dropdown to switch projects, create new, delete existing
+- Switching projects clears current data/assets and loads the new project's latest dataset + assets
+- New project flow: inline name input with Enter or Create button
+- Delete project: confirmation dialog, cascades to datasets/designs/assets
+- User preferences API route (GET/PUT /api/preferences): persists theme and default project
+- Theme persistence: toggling theme saves to server via user_preferences table
+- Hydration loads preferences in parallel with projects, applies saved theme and default project
+- API helpers added: fetchPreferences, updatePreferences, fetchProjectDatasets
+- Build passes, TypeScript clean

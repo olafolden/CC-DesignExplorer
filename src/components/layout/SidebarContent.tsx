@@ -1,10 +1,11 @@
-import { Upload, FolderOpen, Palette } from 'lucide-react'
+import { Upload, FolderOpen, Palette, FolderKanban } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from './ThemeToggle'
+import { ProjectSelector } from '@/components/controls/ProjectSelector'
 import { DropZone } from '@/components/ingestion/DropZone'
 import { AssetDropZone } from '@/components/ingestion/AssetDropZone'
 import { DataSummary } from '@/components/ingestion/DataSummary'
@@ -36,6 +37,14 @@ function CollapsedIcons() {
     <div className="flex flex-col items-center gap-1 py-2">
       <ThemeToggle iconOnly />
       <Separator className="my-1 w-6" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <FolderKanban className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">Projects</TooltipContent>
+      </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -73,6 +82,12 @@ export function SidebarContent() {
     <ScrollArea className="flex-1">
       <div className="space-y-4 p-3">
         <ThemeToggle />
+
+        <Separator />
+
+        <SidebarSection label="Project">
+          <ProjectSelector />
+        </SidebarSection>
 
         <Separator />
 

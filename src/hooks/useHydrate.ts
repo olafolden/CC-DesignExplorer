@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
-import { fetchProjects, fetchDataset, fetchAssetUrls } from '@/lib/api'
+import { fetchProjects, fetchDataset, fetchAssetUrls, fetchPreferences } from '@/lib/api'
 import type { DesignIteration } from '@/types/design'
 
 export function useHydrate() {
@@ -12,6 +12,7 @@ export function useHydrate() {
   const setProjects = useAppStore((s) => s.setProjects)
   const setIsHydrating = useAppStore((s) => s.setIsHydrating)
   const mergeAssetMap = useAppStore((s) => s.mergeAssetMap)
+  const setTheme = useAppStore((s) => s.setTheme)
 
   useEffect(() => {
     if (hasHydrated.current || isDataLoaded) return
@@ -20,8 +21,17 @@ export function useHydrate() {
     async function hydrate() {
       setIsHydrating(true)
       try {
-        // Fetch user's projects
-        const projects = await fetchProjects()
+        // Load preferences and projects in parallel
+        const [prefs, projects] = await Promise.all([
+          fetchPreferences().catch(() => null),
+          fetchProjects(),
+        ])
+
+        // Apply saved theme
+        if (prefs?.theme) {
+          setTheme(prefs.theme)
+        }
+
         setProjects(projects)
 
         if (projects.length === 0) {
@@ -29,11 +39,12 @@ export function useHydrate() {
           return
         }
 
-        // Use the most recently updated project
-        const project = projects[0]
+        // Use default project from preferences, or most recently updated
+        const defaultProjectId = prefs?.default_project_id
+        const project = projects.find((p) => p.id === defaultProjectId) || projects[0]
         setCurrentProjectId(project.id)
 
-        // Fetch datasets for this project — we need to find the latest one
+        // Fetch datasets for this project
         const res = await fetch(`/api/projects/${project.id}/datasets`)
         if (!res.ok) {
           setIsHydrating(false)
@@ -52,8 +63,6 @@ export function useHydrate() {
 
         // Fetch full dataset with design data
         const datasetResponse = await fetchDataset(latestDataset.id)
-
-        // Reconstruct DesignIteration[] with proper typing
         const data = datasetResponse.data as DesignIteration[]
         setRawData(data, datasetResponse.columns)
 
@@ -64,7 +73,7 @@ export function useHydrate() {
             mergeAssetMap(assetUrls)
           }
         } catch {
-          // Assets may not exist yet — that's fine
+          // Assets may not exist yet
         }
       } catch {
         // Silently fail — user just sees empty explorer
@@ -74,5 +83,5 @@ export function useHydrate() {
     }
 
     hydrate()
-  }, [isDataLoaded, setRawData, setCurrentProjectId, setCurrentDatasetId, setProjects, setIsHydrating, mergeAssetMap])
+  }, [isDataLoaded, setRawData, setCurrentProjectId, setCurrentDatasetId, setProjects, setIsHydrating, mergeAssetMap, setTheme])
 }
