@@ -1,0 +1,105 @@
+import { useEffect, useRef } from 'react'
+import { ImageOff } from 'lucide-react'
+import { useAppStore } from '@/store'
+import { useColorScale } from '@/hooks/useColorScale'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
+
+export function CatalogueView() {
+  const rawData = useAppStore((s) => s.rawData)
+  const filteredIds = useAppStore((s) => s.filteredIds)
+  const assetMap = useAppStore((s) => s.assetMap)
+  const selectedDesignId = useAppStore((s) => s.selectedDesignId)
+  const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
+  const setHoveredDesignId = useAppStore((s) => s.setHoveredDesignId)
+  const setViewMode = useAppStore((s) => s.setViewMode)
+  const colorMetricKey = useAppStore((s) => s.colorMetricKey)
+  const colorScale = useColorScale()
+
+  const selectedRef = useRef<HTMLButtonElement>(null)
+
+  // Scroll selected thumbnail into view when selection changes externally
+  useEffect(() => {
+    if (selectedDesignId && selectedRef.current) {
+      selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [selectedDesignId])
+
+  const filteredDesigns = rawData.filter((d) => filteredIds.has(d.id))
+
+  if (filteredDesigns.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground select-none">
+        <ImageOff className="h-12 w-12 mb-3 opacity-20" />
+        <p className="text-xs">No designs match current filters</p>
+      </div>
+    )
+  }
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2 p-3">
+        {filteredDesigns.map((design) => {
+          const assets = assetMap[design.id]
+          const imageUrl = assets?.imageUrl
+          const isSelected = design.id === selectedDesignId
+
+          let colorBar: string | undefined
+          if (colorScale && colorMetricKey) {
+            const val = design[colorMetricKey]
+            if (typeof val === 'number') {
+              colorBar = colorScale.getColorForValue(val)
+            }
+          }
+
+          return (
+            <button
+              key={design.id}
+              ref={isSelected ? selectedRef : undefined}
+              onClick={() => {
+                setSelectedDesignId(design.id)
+                setViewMode('2d')
+              }}
+              onMouseEnter={() => setHoveredDesignId(design.id)}
+              onMouseLeave={() => setHoveredDesignId(null)}
+              className={cn(
+                'group relative flex flex-col rounded-md border bg-card overflow-hidden',
+                'transition-all hover:ring-2 hover:ring-ring/50',
+                isSelected && 'ring-2 ring-primary'
+              )}
+            >
+              {/* Color bar */}
+              {colorBar && (
+                <div
+                  className="h-1 w-full shrink-0"
+                  style={{ backgroundColor: colorBar }}
+                />
+              )}
+
+              {/* Thumbnail */}
+              <div className="aspect-square w-full bg-muted/30 flex items-center justify-center overflow-hidden">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={design.id}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <ImageOff className="h-6 w-6 text-muted-foreground/20" />
+                )}
+              </div>
+
+              {/* Label */}
+              <div className="px-1.5 py-1 text-center">
+                <p className="text-[10px] font-mono text-muted-foreground truncate">
+                  {design.id}
+                </p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </ScrollArea>
+  )
+}

@@ -31,9 +31,9 @@ export interface SelectionSlice {
 }
 
 export interface ViewSlice {
-  viewMode: '2d' | '3d'
+  viewMode: '2d' | '3d' | 'catalogue'
   colorMetricKey: string | null
-  setViewMode: (mode: '2d' | '3d') => void
+  setViewMode: (mode: '2d' | '3d' | 'catalogue') => void
   setColorMetricKey: (key: string | null) => void
 }
 

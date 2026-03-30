@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ViewerToolbar } from './ViewerToolbar'
 import { ImageViewer } from './ImageViewer'
 import { ModelViewer } from './ModelViewer'
+import { CatalogueView } from './CatalogueView'
 
 function EmptyState() {
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)
@@ -51,6 +52,20 @@ export function ViewerPanel() {
   }
 
   const assets = activeId ? assetMap[activeId] : undefined
+
+  // Catalogue view doesn't need a selected design
+  if (viewMode === 'catalogue') {
+    return (
+      <div className="flex flex-col h-full">
+        <ViewerToolbar />
+        <div className="flex-1 overflow-hidden">
+          <ErrorBoundary>
+            <CatalogueView />
+          </ErrorBoundary>
+        </div>
+      </div>
+    )
+  }
 
   if (!activeId) {
     return (

@@ -11,6 +11,7 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
   const rawData = useAppStore((s) => s.rawData)
   const columns = useAppStore((s) => s.columns)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
+  const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)
 
   return useMemo(() => {
@@ -130,11 +131,43 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
           smooth: false,
           inactiveOpacity: 0.04,
           activeOpacity: 0.55,
+          z: 1,
         },
+        // Highlight series: renders selected design on top with bright thick line
+        ...(selectedDesignId
+          ? (() => {
+              const idx = rawData.findIndex((d) => d.id === selectedDesignId)
+              if (idx < 0) return []
+              const row = rawData[idx]
+              const values = numericCols.map((col) => row[col.key] as number)
+              const highlightColor = theme === 'dark' ? '#ffffff' : '#0f172a'
+              return [
+                {
+                  type: 'parallel' as const,
+                  lineStyle: { width: 3, opacity: 1 },
+                  data: [
+                    {
+                      value: values,
+                      lineStyle: {
+                        color: highlightColor,
+                        opacity: 1,
+                        width: 3,
+                        shadowColor: highlightColor,
+                        shadowBlur: 6,
+                      },
+                    },
+                  ],
+                  smooth: false,
+                  silent: true,
+                  z: 2,
+                },
+              ]
+            })()
+          : []),
       ],
       ...markLine,
     }
 
     return option
-  }, [rawData, columns, colorMetricKey, isDataLoaded, theme])
+  }, [rawData, columns, colorMetricKey, selectedDesignId, isDataLoaded, theme])
 }

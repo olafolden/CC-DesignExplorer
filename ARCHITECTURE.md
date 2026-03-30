@@ -136,11 +136,13 @@ CC_DesignExlporer/
 │       │   ├── ModelViewer.tsx            # R3F Canvas container
 │       │   ├── ModelScene.tsx             # Lights, OrbitControls, Environment
 │       │   ├── DesignModel.tsx            # GLB loader + color material override
-│       │   └── ViewerToolbar.tsx          # 2D/3D toggle + controls
+│       │   ├── CatalogueView.tsx         # Thumbnail grid of filtered designs
+│       │   └── ViewerToolbar.tsx          # 2D/3D/Catalogue toggle + controls
 │       │
 │       └── controls/
 │           ├── MetricSelector.tsx         # Color metric dropdown
 │           ├── DesignInfo.tsx             # Selected design parameter card
+│           ├── DesignSelector.tsx         # Searchable design ID picker
 │           └── FilterSummary.tsx          # Active brush ranges as chips
 ```
 
@@ -162,21 +164,24 @@ App
     │       ├── DataSummary (row count, column count, asset count)
     │       ├── MetricSelector (Select dropdown)
     │       ├── FilterSummary (Badge chips with X)
+    │       ├── DesignSelector (Searchable design picker)
     │       └── DesignInfo (Card with key-value pairs)
     │
     └── MainContent (vertical flex)
         ├── ViewerPanel (~55% height)
-        │   ├── ViewerToolbar (2D/3D toggle)
+        │   ├── ViewerToolbar (2D/3D/Catalogue toggle + panel swap)
         │   ├── ImageViewer (conditional: viewMode === '2d')
         │   │   └── <img> with fade transitions
-        │   └── ModelViewer (conditional: viewMode === '3d')
-        │       └── <Canvas> (R3F)
-        │           └── <Suspense>
-        │               └── ModelScene
-        │                   ├── ambientLight + directionalLight
-        │                   ├── OrbitControls
-        │                   ├── Environment (preset="studio")
-        │                   └── DesignModel (useGLTF + color override)
+        │   ├── ModelViewer (conditional: viewMode === '3d')
+        │   │   └── <Canvas> (R3F)
+        │   │       └── <Suspense>
+        │   │           └── ModelScene
+        │   │               ├── ambientLight + directionalLight
+        │   │               ├── OrbitControls
+        │   │               ├── Environment (preset="studio")
+        │   │               └── DesignModel (useGLTF + color override)
+        │   └── CatalogueView (conditional: viewMode === 'catalogue')
+        │       └── ScrollArea > thumbnail grid (filtered designs)
         │
         └── ParallelCoordinates (~45% height)
             └── ReactECharts (parallel coordinates)
@@ -247,7 +252,7 @@ interface SelectionSlice {
 #### ViewSlice
 ```typescript
 interface ViewSlice {
-  viewMode: '2d' | '3d';
+  viewMode: '2d' | '3d' | 'catalogue';
   colorMetricKey: string | null;     // Column key for color mapping
   setViewMode(mode): void;
   setColorMetricKey(key): void;
@@ -381,6 +386,22 @@ const store = useAppStore();
 4. Performance: selectors everywhere, `frameloop="demand"`, memoized options
 5. Optional: resizable split pane, keyboard shortcuts
 
+### Phase 8: Design Selector & Catalogue View
+
+**Goal**: Browse filtered designs visually and select by name.
+
+1. Build `DesignSelector` — searchable input + dropdown list in sidebar, filters design IDs by substring
+2. Extend `viewMode` to `'2d' | '3d' | 'catalogue'`
+3. Build `CatalogueView` — responsive thumbnail grid of filtered designs' 2D images
+4. Add LayoutGrid button to ViewerToolbar segmented toggle
+5. Thumbnail click -> `setSelectedDesignId(id)` + switch to 2D view
+6. Thumbnail hover -> updates DesignInfo in sidebar
+7. Color metric shown as thin color bar on each thumbnail
+8. Selection highlight: second ECharts series renders selected line with bright thick stroke + glow (z=2)
+9. Catalogue auto-scrolls selected thumbnail into view on external selection (chart click, DesignSelector)
+
+**Verify**: Search designs by name, browse catalogue, click thumbnail to view detail. Selected design highlighted in chart and catalogue from any selection source.
+
 ---
 
 ## Key Technical Decisions
@@ -486,6 +507,9 @@ function getColorHex(value: number, min: number, max: number): string {
 | 6     | Verify filter summary chips                                           | Active ranges displayed, removable                           |
 | 7     | Load 1,000 rows, brush rapidly                                        | Stays snappy (<100ms), no jank                               |
 | 7     | Drop invalid JSON                                                     | Error message shown, no crash                                |
+| 8     | Type in design selector                                                | List filters by substring match                              |
+| 8     | Click catalogue (grid) button                                          | Thumbnail grid of filtered designs appears                   |
+| 8     | Click a thumbnail                                                      | Switches to 2D view of that design                           |
 
 ---
 

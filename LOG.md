@@ -67,3 +67,13 @@
 - ErrorBoundary: wraps AppShell and viewer content, graceful fallback with retry button
 - Keyboard shortcuts: Esc (clear selection), T (toggle theme), [ (toggle sidebar)
 - Transparent chart background: prevents ECharts theme from painting over app background
+
+## Phase 8 — Design Selector & Catalogue View (2026-03-30)
+- DesignSelector: searchable dropdown in sidebar, filters design IDs by substring, click to select
+- CatalogueView: responsive thumbnail grid showing filtered designs' 2D images
+- viewMode extended to '2d' | '3d' | 'catalogue' with LayoutGrid button in ViewerToolbar
+- Thumbnail click switches to 2D single-design view, hover updates DesignInfo
+- Color metric shown as thin color bar on each thumbnail card
+- Selection highlight: selected design rendered as bright thick line (2nd ECharts series, z=2) with glow
+- Catalogue highlights selected thumbnail with ring + auto-scrolls into view on external selection
+- ARCHITECTURE.md updated with Phase 8 docs, component hierarchy, folder structure

@@ -11,6 +11,7 @@ import { DataSummary } from '@/components/ingestion/DataSummary'
 import { MetricSelector } from '@/components/controls/MetricSelector'
 import { FilterSummary } from '@/components/controls/FilterSummary'
 import { DesignInfo } from '@/components/controls/DesignInfo'
+import { DesignSelector } from '@/components/controls/DesignSelector'
 
 function SidebarSection({
   label,
@@ -91,6 +92,7 @@ export function SidebarContent() {
         <Separator />
 
         <SidebarSection label="Selection">
+          <DesignSelector />
           <DesignInfo />
         </SidebarSection>
       </div>

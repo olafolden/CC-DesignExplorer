@@ -1,4 +1,4 @@
-import { Image, Box, ArrowUpDown } from 'lucide-react'
+import { Image, Box, LayoutGrid, ArrowUpDown } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +45,17 @@ export function ViewerToolbar() {
             onClick={() => setViewMode('3d')}
           >
             <Box className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-6 w-6 rounded-sm',
+              viewMode === 'catalogue' && 'bg-background shadow-sm'
+            )}
+            onClick={() => setViewMode('catalogue')}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
           </Button>
         </div>
 
