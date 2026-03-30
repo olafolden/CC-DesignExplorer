@@ -61,3 +61,11 @@
 - Hydration loads preferences in parallel with projects, applies saved theme and default project
 - API helpers added: fetchPreferences, updatePreferences, fetchProjectDatasets
 - Build passes, TypeScript clean
+
+## Phase 5 — Polish (2026-03-30)
+- Loading skeleton: shows spinner + skeleton bars in chart/viewer area during hydration
+- Signed URL expiration: useRefreshAssets hook auto-re-fetches asset URLs on image 403 errors
+- ImageViewer and CatalogueView both trigger asset URL refresh on load failures
+- Delete dataset UI: button in project section to delete current dataset with confirmation
+- ProjectSelector refactored: extracted shared loadDataset helper, cleaner state management
+- Build passes, TypeScript clean

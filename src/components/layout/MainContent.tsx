@@ -2,8 +2,9 @@
 
 import { useCallback, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { BarChart3, MousePointerClick } from 'lucide-react'
+import { BarChart3, Loader2, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ResizeHandle } from './ResizeHandle'
 import { ViewerPanel } from '@/components/viewer/ViewerPanel'
 
@@ -28,10 +29,25 @@ function ChartEmpty() {
   )
 }
 
+function HydrationSkeleton() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-muted-foreground select-none gap-3">
+      <Loader2 className="h-8 w-8 animate-spin opacity-30" />
+      <p className="text-sm">Loading your workspace...</p>
+      <div className="w-48 space-y-2 mt-2">
+        <Skeleton className="h-2 w-full" />
+        <Skeleton className="h-2 w-3/4" />
+        <Skeleton className="h-2 w-1/2" />
+      </div>
+    </div>
+  )
+}
+
 export function MainContent() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartRatio, setChartRatio] = useState(DEFAULT_CHART_RATIO)
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const isHydrating = useAppStore((s) => s.isHydrating)
   const panelsSwapped = useAppStore((s) => s.panelsSwapped)
 
   const handleResize = useCallback(
@@ -67,7 +83,7 @@ export function MainContent() {
       className="overflow-hidden border-t border-border bg-card"
       style={{ flex: `${panelsSwapped ? 1 - chartRatio : chartRatio} 1 0%` }}
     >
-      {isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
+      {isHydrating ? <HydrationSkeleton /> : isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
     </div>
   )
 

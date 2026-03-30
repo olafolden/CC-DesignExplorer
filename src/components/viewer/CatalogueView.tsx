@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ImageOff, Box } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useColorScale } from '@/hooks/useColorScale'
+import { useRefreshAssets } from '@/hooks/useRefreshAssets'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +18,7 @@ export function CatalogueView() {
   const colorScale = useColorScale()
 
   const selectedRef = useRef<HTMLButtonElement>(null)
+  const refreshAssets = useRefreshAssets()
 
   // Scroll selected thumbnail into view when selection changes externally
   useEffect(() => {
@@ -102,6 +104,7 @@ export function CatalogueView() {
                     alt={design.id}
                     className="h-full w-full object-cover"
                     loading="lazy"
+                    onError={refreshAssets}
                   />
                 ) : (
                   <ImageOff className="h-6 w-6 text-muted-foreground/20" />

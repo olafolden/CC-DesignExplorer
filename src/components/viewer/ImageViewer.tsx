@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ImageOff } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useRefreshAssets } from '@/hooks/useRefreshAssets'
 
 interface ImageViewerProps {
   imageUrl: string | null
@@ -10,6 +11,14 @@ interface ImageViewerProps {
 export function ImageViewer({ imageUrl, designId }: ImageViewerProps) {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+  const refreshAssets = useRefreshAssets()
+
+  const handleError = useCallback(() => {
+    setError(true)
+    setLoaded(false)
+    // Signed URL may have expired — try refreshing
+    refreshAssets()
+  }, [refreshAssets])
 
   if (!imageUrl || error) {
     return (
@@ -32,7 +41,7 @@ export function ImageViewer({ imageUrl, designId }: ImageViewerProps) {
         className="max-h-full max-w-full object-contain transition-opacity duration-200"
         style={{ opacity: loaded ? 1 : 0 }}
         onLoad={() => { setLoaded(true); setError(false) }}
-        onError={() => { setError(true); setLoaded(false) }}
+        onError={handleError}
       />
     </div>
   )

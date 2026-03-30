@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
-import { Plus, Trash2, FolderKanban } from 'lucide-react'
+import { Plus, Trash2, FolderKanban, FileX2 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   createProject,
   deleteProject,
+  deleteDataset,
   fetchProjectDatasets,
   fetchDataset,
   fetchAssetUrls,
@@ -21,6 +22,7 @@ import type { DesignIteration } from '@/types/design'
 export function ProjectSelector() {
   const projects = useAppStore((s) => s.projects)
   const currentProjectId = useAppStore((s) => s.currentProjectId)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const setCurrentProjectId = useAppStore((s) => s.setCurrentProjectId)
   const setCurrentDatasetId = useAppStore((s) => s.setCurrentDatasetId)
   const setProjects = useAppStore((s) => s.setProjects)
@@ -28,10 +30,30 @@ export function ProjectSelector() {
   const clearData = useAppStore((s) => s.clearData)
   const mergeAssetMap = useAppStore((s) => s.mergeAssetMap)
   const clearAssets = useAppStore((s) => s.clearAssets)
+  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
 
   const [isCreating, setIsCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const loadDataset = useCallback(
+    async (datasetId: string) => {
+      const datasetResponse = await fetchDataset(datasetId)
+      const data = datasetResponse.data as DesignIteration[]
+      setRawData(data, datasetResponse.columns)
+      setCurrentDatasetId(datasetId)
+
+      try {
+        const assetUrls = await fetchAssetUrls(datasetId)
+        if (Object.keys(assetUrls).length > 0) {
+          mergeAssetMap(assetUrls)
+        }
+      } catch {
+        // No assets yet
+      }
+    },
+    [setRawData, setCurrentDatasetId, mergeAssetMap]
+  )
 
   const switchProject = useCallback(
     async (projectId: string) => {
@@ -39,40 +61,23 @@ export function ProjectSelector() {
       setLoading(true)
 
       try {
-        // Clear current state
         clearData()
         clearAssets()
         setCurrentProjectId(projectId)
 
-        // Load datasets for the new project
         const datasets = await fetchProjectDatasets(projectId)
         if (datasets.length > 0) {
-          const latest = datasets[0]
-          setCurrentDatasetId(latest.id)
-
-          const datasetResponse = await fetchDataset(latest.id)
-          const data = datasetResponse.data as DesignIteration[]
-          setRawData(data, datasetResponse.columns)
-
-          // Load assets
-          try {
-            const assetUrls = await fetchAssetUrls(latest.id)
-            if (Object.keys(assetUrls).length > 0) {
-              mergeAssetMap(assetUrls)
-            }
-          } catch {
-            // No assets yet
-          }
+          await loadDataset(datasets[0].id)
         } else {
           setCurrentDatasetId(null)
         }
       } catch {
-        // Failed to switch — keep current state
+        // Failed to switch
       } finally {
         setLoading(false)
       }
     },
-    [currentProjectId, clearData, clearAssets, setCurrentProjectId, setCurrentDatasetId, setRawData, mergeAssetMap]
+    [currentProjectId, clearData, clearAssets, setCurrentProjectId, setCurrentDatasetId, loadDataset]
   )
 
   const handleCreate = useCallback(async () => {
@@ -90,10 +95,9 @@ export function ProjectSelector() {
     }
   }, [newName, projects, setProjects, switchProject])
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteProject = useCallback(async () => {
     if (!currentProjectId) return
-    const confirmed = window.confirm('Delete this project and all its data?')
-    if (!confirmed) return
+    if (!window.confirm('Delete this project and all its data?')) return
 
     try {
       await deleteProject(currentProjectId)
@@ -112,6 +116,27 @@ export function ProjectSelector() {
       // Failed to delete
     }
   }, [currentProjectId, projects, setProjects, switchProject, clearData, clearAssets, setCurrentProjectId, setCurrentDatasetId])
+
+  const handleDeleteDataset = useCallback(async () => {
+    if (!currentDatasetId || !currentProjectId) return
+    if (!window.confirm('Delete this dataset and its assets?')) return
+
+    try {
+      await deleteDataset(currentDatasetId)
+      clearData()
+      clearAssets()
+
+      // Try loading another dataset from the same project
+      const datasets = await fetchProjectDatasets(currentProjectId)
+      if (datasets.length > 0) {
+        await loadDataset(datasets[0].id)
+      } else {
+        setCurrentDatasetId(null)
+      }
+    } catch {
+      // Failed to delete
+    }
+  }, [currentDatasetId, currentProjectId, clearData, clearAssets, setCurrentDatasetId, loadDataset])
 
   return (
     <div className="space-y-2">
@@ -149,7 +174,7 @@ export function ProjectSelector() {
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={handleDelete}
+            onClick={handleDeleteProject}
             title="Delete project"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -178,6 +203,18 @@ export function ProjectSelector() {
             Create
           </Button>
         </div>
+      )}
+
+      {isDataLoaded && currentDatasetId && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-full justify-start gap-1.5 text-[10px] text-muted-foreground hover:text-destructive"
+          onClick={handleDeleteDataset}
+        >
+          <FileX2 className="h-3 w-3" />
+          Delete current dataset
+        </Button>
       )}
     </div>
   )
