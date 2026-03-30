@@ -53,3 +53,10 @@
 - Color mapping: same blue-to-red scale from chart applied to 3D mesh material
 - Hover preview: hoveredDesignId takes priority over selectedDesignId for live preview
 - Empty states: context-aware messages (no data loaded vs no design selected)
+
+## Phase 6 — Color Mapping & Controls (2026-03-29)
+- MetricSelector: dropdown grouped by inputs (sky) / outputs (amber), sets colorMetricKey in store
+- FilterSummary: shows active brush ranges as badges, filtered/total count, "Clear all" button
+- DesignInfo: selected design parameter card with input/output sections, color dot on active metric
+- Sidebar placeholders replaced with real controls
+- Color sync: metric selector drives chart line colors + 3D model material color via shared useColorScale

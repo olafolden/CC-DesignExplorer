@@ -1,4 +1,4 @@
-import { Upload, FolderOpen, Palette, Filter, Info } from 'lucide-react'
+import { Upload, FolderOpen, Palette } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -8,6 +8,9 @@ import { ThemeToggle } from './ThemeToggle'
 import { DropZone } from '@/components/ingestion/DropZone'
 import { AssetDropZone } from '@/components/ingestion/AssetDropZone'
 import { DataSummary } from '@/components/ingestion/DataSummary'
+import { MetricSelector } from '@/components/controls/MetricSelector'
+import { FilterSummary } from '@/components/controls/FilterSummary'
+import { DesignInfo } from '@/components/controls/DesignInfo'
 
 function SidebarSection({
   label,
@@ -26,25 +29,6 @@ function SidebarSection({
   )
 }
 
-function PlaceholderSlot({
-  icon: Icon,
-  label,
-  phase,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  phase: number
-}) {
-  return (
-    <div className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2.5 text-muted-foreground/50">
-      <Icon className="h-4 w-4 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-xs truncate">{label}</p>
-        <p className="text-[10px]">Phase {phase}</p>
-      </div>
-    </div>
-  )
-}
 
 function CollapsedIcons() {
   return (
@@ -69,11 +53,11 @@ function CollapsedIcons() {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <Palette className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="right">Color metric (Phase 6)</TooltipContent>
+        <TooltipContent side="right">Color metric</TooltipContent>
       </Tooltip>
     </div>
   )
@@ -100,14 +84,14 @@ export function SidebarContent() {
         <Separator />
 
         <SidebarSection label="Visualization">
-          <PlaceholderSlot icon={Palette} label="Color metric" phase={6} />
-          <PlaceholderSlot icon={Filter} label="Active filters" phase={6} />
+          <MetricSelector />
+          <FilterSummary />
         </SidebarSection>
 
         <Separator />
 
         <SidebarSection label="Selection">
-          <PlaceholderSlot icon={Info} label="Design details" phase={6} />
+          <DesignInfo />
         </SidebarSection>
       </div>
     </ScrollArea>

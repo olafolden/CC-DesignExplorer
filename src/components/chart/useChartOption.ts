@@ -10,7 +10,6 @@ const OUTPUT_AXIS_COLOR = '#fbbf24'  // amber-400
 export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
   const rawData = useAppStore((s) => s.rawData)
   const columns = useAppStore((s) => s.columns)
-  const filteredIds = useAppStore((s) => s.filteredIds)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)
 
@@ -26,7 +25,6 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
       : null
 
     const textColor = theme === 'dark' ? '#94a3b8' : '#64748b'
-    const lineColorDim = theme === 'dark' ? 'rgba(100,116,139,0.06)' : 'rgba(100,116,139,0.08)'
 
     // Find the index where outputs start (for the visual separator)
     const firstOutputIdx = numericCols.findIndex((c) => c.role === 'output')
@@ -56,12 +54,9 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
 
     const seriesData = rawData.map((row) => {
       const values = numericCols.map((col) => row[col.key] as number)
-      const isActive = filteredIds.has(row.id)
 
       let lineColor: string
-      if (!isActive) {
-        lineColor = lineColorDim
-      } else if (colorCol && colorCol.min != null && colorCol.max != null) {
+      if (colorCol && colorCol.min != null && colorCol.max != null) {
         lineColor = getColorHex(
           row[colorCol.key] as number,
           colorCol.min,
@@ -75,8 +70,8 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
         value: values,
         lineStyle: {
           color: lineColor,
-          opacity: isActive ? 0.55 : 0.04,
-          width: isActive ? 1.5 : 0.5,
+          opacity: 0.55,
+          width: 1.5,
         },
       }
     })
@@ -107,6 +102,7 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
       : {}
 
     const option: EChartsOption = {
+      backgroundColor: 'transparent',
       parallelAxis,
       parallel: {
         left: 60,
@@ -140,5 +136,5 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
     }
 
     return option
-  }, [rawData, columns, filteredIds, colorMetricKey, isDataLoaded, theme])
+  }, [rawData, columns, colorMetricKey, isDataLoaded, theme])
 }

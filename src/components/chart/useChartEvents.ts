@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react'
+import type { EChartsType } from 'echarts'
 import { useAppStore } from '@/store'
 import type { BrushRange } from '@/store/types'
 
@@ -14,22 +15,28 @@ export function useChartEvents() {
 
   const handleAxisAreaSelected = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
+    (_params: any, instance: EChartsType) => {
       cancelAnimationFrame(rafId.current)
       rafId.current = requestAnimationFrame(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const axisArrays: any[] = params.currentSelections || []
         const ranges: BrushRange[] = []
 
-        for (const sel of axisArrays) {
-          const axisIndex = sel.axisIndex as number
-          const intervals = sel.intervals as [number, number][]
-          const col = numericCols[axisIndex]
+        // Query each parallel axis model for its active intervals
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const opt = instance.getOption() as any
+        const parallelAxes = opt.parallelAxis || []
+
+        for (let i = 0; i < parallelAxes.length; i++) {
+          const col = numericCols[i]
           if (!col) continue
+
+          // Get the axis model to read activeIntervals
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const axisModel = (instance as any).getModel()?.getComponent('parallelAxis', i)
+          const intervals: [number, number][] = axisModel?.activeIntervals || []
 
           for (const interval of intervals) {
             ranges.push({
-              axisIndex,
+              axisIndex: i,
               key: col.key,
               range: interval,
             })
@@ -54,7 +61,7 @@ export function useChartEvents() {
 
   return {
     onEvents: {
-      axisareaselected: handleAxisAreaSelected,
+      axisAreaSelected: handleAxisAreaSelected,
       click: handleClick,
     },
   }
