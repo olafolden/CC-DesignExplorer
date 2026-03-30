@@ -4,6 +4,7 @@ import type { AppStore, UISlice } from '../types'
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get) => ({
   theme: 'dark',
   sidebarCollapsed: false,
+  panelsSwapped: false,
   setTheme: (theme) => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
     set({ theme })
@@ -15,4 +16,5 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get)
   },
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  togglePanelSwap: () => set((s) => ({ panelsSwapped: !s.panelsSwapped })),
 })

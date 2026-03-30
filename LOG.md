@@ -60,3 +60,10 @@
 - DesignInfo: selected design parameter card with input/output sections, color dot on active metric
 - Sidebar placeholders replaced with real controls
 - Color sync: metric selector drives chart line colors + 3D model material color via shared useColorScale
+
+## Phase 7 — Polish & Panel Swap (2026-03-30)
+- Panel swap: toggle button (ArrowUpDown) in ViewerToolbar swaps viewer and chart positions
+- panelsSwapped state in UISlice, MainContent renders panels in swapped order
+- ErrorBoundary: wraps AppShell and viewer content, graceful fallback with retry button
+- Keyboard shortcuts: Esc (clear selection), T (toggle theme), [ (toggle sidebar)
+- Transparent chart background: prevents ECharts theme from painting over app background

@@ -1,6 +1,7 @@
 import { Box, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useColorScale } from '@/hooks/useColorScale'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ViewerToolbar } from './ViewerToolbar'
 import { ImageViewer } from './ImageViewer'
 import { ModelViewer } from './ModelViewer'
@@ -64,18 +65,20 @@ export function ViewerPanel() {
     <div className="flex flex-col h-full">
       <ViewerToolbar />
       <div className="flex-1 overflow-hidden">
-        {viewMode === '2d' ? (
-          <ImageViewer
-            imageUrl={assets?.imageUrl ?? null}
-            designId={activeId}
-          />
-        ) : (
-          <ModelViewer
-            modelUrl={assets?.modelUrl ?? null}
-            designId={activeId}
-            color={designColor}
-          />
-        )}
+        <ErrorBoundary>
+          {viewMode === '2d' ? (
+            <ImageViewer
+              imageUrl={assets?.imageUrl ?? null}
+              designId={activeId}
+            />
+          ) : (
+            <ModelViewer
+              modelUrl={assets?.modelUrl ?? null}
+              designId={activeId}
+              color={designColor}
+            />
+          )}
+        </ErrorBoundary>
       </div>
     </div>
   )

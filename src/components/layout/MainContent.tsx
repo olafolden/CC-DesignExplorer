@@ -25,6 +25,7 @@ export function MainContent() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartRatio, setChartRatio] = useState(DEFAULT_CHART_RATIO)
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const panelsSwapped = useAppStore((s) => s.panelsSwapped)
 
   const handleResize = useCallback(
     (deltaY: number) => {
@@ -43,25 +44,31 @@ export function MainContent() {
     []
   )
 
+  const viewerPanel = (
+    <div
+      key="viewer"
+      className="overflow-hidden bg-background"
+      style={{ flex: `${panelsSwapped ? chartRatio : 1 - chartRatio} 1 0%` }}
+    >
+      <ViewerPanel />
+    </div>
+  )
+
+  const chartPanel = (
+    <div
+      key="chart"
+      className="overflow-hidden border-t border-border bg-card"
+      style={{ flex: `${panelsSwapped ? 1 - chartRatio : chartRatio} 1 0%` }}
+    >
+      {isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
+    </div>
+  )
+
   return (
     <main ref={containerRef} className="flex flex-1 flex-col overflow-hidden">
-      {/* Viewer area */}
-      <div
-        className="overflow-hidden bg-background"
-        style={{ flex: `${1 - chartRatio} 1 0%` }}
-      >
-        <ViewerPanel />
-      </div>
-
+      {panelsSwapped ? chartPanel : viewerPanel}
       <ResizeHandle onResize={handleResize} />
-
-      {/* Chart area */}
-      <div
-        className="overflow-hidden border-t border-border bg-card"
-        style={{ flex: `${chartRatio} 1 0%` }}
-      >
-        {isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
-      </div>
+      {panelsSwapped ? viewerPanel : chartPanel}
     </main>
   )
 }

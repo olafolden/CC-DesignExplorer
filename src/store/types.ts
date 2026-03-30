@@ -47,10 +47,12 @@ export interface AssetSlice {
 export interface UISlice {
   theme: 'light' | 'dark'
   sidebarCollapsed: boolean
+  panelsSwapped: boolean
   setTheme: (theme: 'light' | 'dark') => void
   toggleTheme: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
+  togglePanelSwap: () => void
 }
 
 export type AppStore = DataSlice &

@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
 import { AppShell } from '@/components/layout/AppShell'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function App() {
   const theme = useAppStore((s) => s.theme)
@@ -10,9 +11,35 @@ export default function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ignore when typing in inputs
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+    switch (e.key) {
+      case 'Escape':
+        useAppStore.getState().setSelectedDesignId(null)
+        useAppStore.getState().setHoveredDesignId(null)
+        break
+      case 't':
+      case 'T':
+        if (!e.ctrlKey && !e.metaKey) useAppStore.getState().toggleTheme()
+        break
+      case '[':
+        useAppStore.getState().toggleSidebar()
+        break
+    }
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
   return (
     <TooltipProvider>
-      <AppShell />
+      <ErrorBoundary>
+        <AppShell />
+      </ErrorBoundary>
     </TooltipProvider>
   )
 }
