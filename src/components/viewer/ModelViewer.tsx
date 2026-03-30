@@ -31,3 +31,5 @@ export function ModelViewer({ modelUrl, designId, color }: ModelViewerProps) {
     </div>
   )
 }
+
+export default ModelViewer

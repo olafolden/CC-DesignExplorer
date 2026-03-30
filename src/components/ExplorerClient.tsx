@@ -1,10 +1,12 @@
+'use client'
+
 import { useEffect, useCallback } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
 import { AppShell } from '@/components/layout/AppShell'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
-export default function App() {
+export default function ExplorerClient() {
   const theme = useAppStore((s) => s.theme)
 
   useEffect(() => {
@@ -12,7 +14,6 @@ export default function App() {
   }, [theme])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Ignore when typing in inputs
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
     switch (e.key) {

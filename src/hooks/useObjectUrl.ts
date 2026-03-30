@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useEffect } from 'react'
 
 export function useObjectUrl(file: File | null) {
-  const [url, setUrl] = useState<string | null>(null)
+  const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
 
   useEffect(() => {
-    if (!file) {
-      setUrl(null)
-      return
+    return () => {
+      if (url) URL.revokeObjectURL(url)
     }
-
-    const objectUrl = URL.createObjectURL(file)
-    setUrl(objectUrl)
-
-    return () => URL.revokeObjectURL(objectUrl)
-  }, [file])
+  }, [url])
 
   return url
 }

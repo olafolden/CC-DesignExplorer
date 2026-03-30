@@ -1,11 +1,18 @@
+'use client'
+
+import dynamic from 'next/dynamic'
 import { Box, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useColorScale } from '@/hooks/useColorScale'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ViewerToolbar } from './ViewerToolbar'
 import { ImageViewer } from './ImageViewer'
-import { ModelViewer } from './ModelViewer'
 import { CatalogueView } from './CatalogueView'
+
+const ModelViewer = dynamic(
+  () => import('@/components/viewer/ModelViewer'),
+  { ssr: false }
+)
 
 function EmptyState() {
   const isDataLoaded = useAppStore((s) => s.isDataLoaded)

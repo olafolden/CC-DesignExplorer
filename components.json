@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
   "style": "new-york",
-  "rsc": false,
+  "rsc": true,
   "tsx": true,
   "tailwind": {
     "config": "",
@@ -16,13 +16,6 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
-  },
-  "resolvedPaths": {
-    "components": "src/components",
-    "utils": "src/lib/utils",
-    "ui": "src/components/ui",
-    "lib": "src/lib",
-    "hooks": "src/hooks"
   },
   "iconLibrary": "lucide"
 }

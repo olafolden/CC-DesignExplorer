@@ -1,9 +1,16 @@
+'use client'
+
 import { useCallback, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { BarChart3, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { ResizeHandle } from './ResizeHandle'
-import { ParallelCoordinates } from '@/components/chart/ParallelCoordinates'
 import { ViewerPanel } from '@/components/viewer/ViewerPanel'
+
+const ParallelCoordinates = dynamic(
+  () => import('@/components/chart/ParallelCoordinates'),
+  { ssr: false }
+)
 
 const MIN_PANEL_HEIGHT = 120
 const DEFAULT_CHART_RATIO = 0.4

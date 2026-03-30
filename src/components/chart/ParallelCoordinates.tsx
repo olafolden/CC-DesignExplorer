@@ -54,3 +54,5 @@ export function ParallelCoordinates() {
     />
   )
 }
+
+export default ParallelCoordinates
