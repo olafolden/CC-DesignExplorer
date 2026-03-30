@@ -6,6 +6,7 @@ import { createSelectionSlice } from './slices/selection-slice'
 import { createViewSlice } from './slices/view-slice'
 import { createAssetSlice } from './slices/asset-slice'
 import { createUISlice } from './slices/ui-slice'
+import { createProjectSlice } from './slices/project-slice'
 import type { AppStore } from './types'
 
 export const useAppStore = create<AppStore>()(
@@ -17,6 +18,7 @@ export const useAppStore = create<AppStore>()(
       ...createViewSlice(...a),
       ...createAssetSlice(...a),
       ...createUISlice(...a),
+      ...createProjectSlice(...a),
     }),
     { name: 'DesignExplorerStore' }
   )

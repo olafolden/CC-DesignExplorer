@@ -55,9 +55,28 @@ export interface UISlice {
   togglePanelSwap: () => void
 }
 
+export interface ProjectInfo {
+  id: string
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectSlice {
+  currentProjectId: string | null
+  currentDatasetId: string | null
+  projects: ProjectInfo[]
+  isHydrating: boolean
+  setCurrentProjectId: (id: string | null) => void
+  setCurrentDatasetId: (id: string | null) => void
+  setProjects: (projects: ProjectInfo[]) => void
+  setIsHydrating: (v: boolean) => void
+}
+
 export type AppStore = DataSlice &
   FilterSlice &
   SelectionSlice &
   ViewSlice &
   AssetSlice &
-  UISlice
+  UISlice &
+  ProjectSlice

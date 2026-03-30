@@ -5,9 +5,11 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
 import { AppShell } from '@/components/layout/AppShell'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { useHydrate } from '@/hooks/useHydrate'
 
 export default function ExplorerClient() {
   const theme = useAppStore((s) => s.theme)
+  useHydrate()
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
