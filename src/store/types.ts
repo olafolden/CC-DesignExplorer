@@ -41,7 +41,8 @@ export interface AssetSlice {
   assetMap: Record<string, AssetEntry>
   isAssetsLoaded: boolean
   setAssetMap: (map: Record<string, AssetEntry>) => void
-  revokeAllUrls: () => void
+  mergeAssetMap: (partial: Record<string, AssetEntry>) => void
+  clearAssets: () => void
 }
 
 export interface UISlice {

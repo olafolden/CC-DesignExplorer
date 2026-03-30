@@ -23,7 +23,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], DataSlice> = (
     })
   },
   clearData: () => {
-    get().revokeAllUrls()
+    get().clearAssets()
     set({
       rawData: [],
       columns: [],

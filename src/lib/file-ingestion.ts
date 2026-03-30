@@ -1,5 +1,4 @@
 import type { ColumnMeta, DesignIteration } from '@/types/design'
-import type { AssetEntry } from '@/types/assets'
 
 interface ParseResult {
   data: DesignIteration[]
@@ -129,11 +128,16 @@ function getDesignIdFromFilename(filename: string): string {
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp']
 const MODEL_EXTENSIONS = ['.glb', '.gltf']
 
-export async function processAssetDrop(
-  dataTransfer: DataTransfer
-): Promise<Record<string, AssetEntry>> {
-  const assetMap: Record<string, AssetEntry> = {}
+export interface AssetFileEntry {
+  name: string
+  file: File
+  designKey: string
+  assetType: 'image' | 'model'
+}
 
+export async function collectAssetFiles(
+  dataTransfer: DataTransfer
+): Promise<AssetFileEntry[]> {
   const items = Array.from(dataTransfer.items)
   const entries = items
     .map((item) => item.webkitGetAsEntry?.())
@@ -154,43 +158,18 @@ export async function processAssetDrop(
     }
   }
 
+  const result: AssetFileEntry[] = []
+
   for (const { name, file } of allFiles) {
     const ext = name.substring(name.lastIndexOf('.')).toLowerCase()
-    const designId = getDesignIdFromFilename(name)
-
-    if (!assetMap[designId]) {
-      assetMap[designId] = { imageUrl: null, modelUrl: null }
-    }
+    const designKey = getDesignIdFromFilename(name)
 
     if (IMAGE_EXTENSIONS.includes(ext)) {
-      assetMap[designId].imageUrl = URL.createObjectURL(file)
+      result.push({ name, file, designKey, assetType: 'image' })
     } else if (MODEL_EXTENSIONS.includes(ext)) {
-      assetMap[designId].modelUrl = URL.createObjectURL(file)
+      result.push({ name, file, designKey, assetType: 'model' })
     }
   }
 
-  return assetMap
-}
-
-export async function processFileInput(
-  files: FileList
-): Promise<Record<string, AssetEntry>> {
-  const assetMap: Record<string, AssetEntry> = {}
-
-  for (const file of Array.from(files)) {
-    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
-    const designId = getDesignIdFromFilename(file.name)
-
-    if (!assetMap[designId]) {
-      assetMap[designId] = { imageUrl: null, modelUrl: null }
-    }
-
-    if (IMAGE_EXTENSIONS.includes(ext)) {
-      assetMap[designId].imageUrl = URL.createObjectURL(file)
-    } else if (MODEL_EXTENSIONS.includes(ext)) {
-      assetMap[designId].modelUrl = URL.createObjectURL(file)
-    }
-  }
-
-  return assetMap
+  return result
 }

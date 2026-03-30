@@ -37,3 +37,16 @@
 - useHydrate hook: on mount, loads user's latest project and dataset from server
 - Client-side API helpers (src/lib/api.ts): typed fetch wrappers for all routes
 - .env.local wired with real Supabase URL + anon key
+
+## Phase 3 — Asset Storage (2026-03-30)
+- API routes:
+  - POST /api/assets/upload — multipart upload to Supabase Storage, upserts asset record
+  - GET /api/assets/batch-urls — returns signed URLs for all assets in a dataset (1h expiry)
+- AssetDropZone rewritten: uploads files to server with progress indicator instead of blob URLs
+- file-ingestion.ts: `processAssetDrop`/`processFileInput` replaced with `collectAssetFiles` (returns raw File objects for server upload)
+- AssetSlice updated: removed `revokeAllUrls`, added `mergeAssetMap`/`clearAssets` for server URL management
+- useHydrate hook: now fetches asset URLs on mount via `fetchAssetUrls()`
+- Client API helpers: added `uploadAsset()` and `fetchAssetUrls()` to src/lib/api.ts
+- Supabase Storage RLS policies added: INSERT/UPDATE/SELECT/DELETE scoped to user's own folder
+- Upload route: File converted to Buffer for Next.js compatibility, design key sanitized
+- Build passes, TypeScript clean

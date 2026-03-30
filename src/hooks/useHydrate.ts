@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
-import { fetchProjects, fetchDataset } from '@/lib/api'
+import { fetchProjects, fetchDataset, fetchAssetUrls } from '@/lib/api'
 import type { DesignIteration } from '@/types/design'
 
 export function useHydrate() {
@@ -11,6 +11,7 @@ export function useHydrate() {
   const setCurrentDatasetId = useAppStore((s) => s.setCurrentDatasetId)
   const setProjects = useAppStore((s) => s.setProjects)
   const setIsHydrating = useAppStore((s) => s.setIsHydrating)
+  const mergeAssetMap = useAppStore((s) => s.mergeAssetMap)
 
   useEffect(() => {
     if (hasHydrated.current || isDataLoaded) return
@@ -33,7 +34,6 @@ export function useHydrate() {
         setCurrentProjectId(project.id)
 
         // Fetch datasets for this project — we need to find the latest one
-        // For now, fetch datasets via the project's datasets
         const res = await fetch(`/api/projects/${project.id}/datasets`)
         if (!res.ok) {
           setIsHydrating(false)
@@ -56,6 +56,16 @@ export function useHydrate() {
         // Reconstruct DesignIteration[] with proper typing
         const data = datasetResponse.data as DesignIteration[]
         setRawData(data, datasetResponse.columns)
+
+        // Fetch asset URLs for this dataset
+        try {
+          const assetUrls = await fetchAssetUrls(latestDataset.id)
+          if (Object.keys(assetUrls).length > 0) {
+            mergeAssetMap(assetUrls)
+          }
+        } catch {
+          // Assets may not exist yet — that's fine
+        }
       } catch {
         // Silently fail — user just sees empty explorer
       } finally {
@@ -64,5 +74,5 @@ export function useHydrate() {
     }
 
     hydrate()
-  }, [isDataLoaded, setRawData, setCurrentProjectId, setCurrentDatasetId, setProjects, setIsHydrating])
+  }, [isDataLoaded, setRawData, setCurrentProjectId, setCurrentDatasetId, setProjects, setIsHydrating, mergeAssetMap])
 }

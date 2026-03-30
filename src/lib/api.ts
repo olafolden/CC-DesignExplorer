@@ -70,3 +70,36 @@ export async function fetchDataset(id: string): Promise<DatasetResponse> {
 export async function deleteDataset(id: string): Promise<void> {
   await apiFetch(`/api/datasets/${id}`, { method: 'DELETE' })
 }
+
+// Asset APIs
+
+export interface AssetMap {
+  [designKey: string]: { imageUrl: string | null; modelUrl: string | null }
+}
+
+export async function uploadAsset(
+  file: File,
+  datasetId: string,
+  designKey: string,
+  assetType: 'image' | 'model'
+): Promise<{ ok: boolean; storagePath: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('datasetId', datasetId)
+  formData.append('designKey', designKey)
+  formData.append('assetType', assetType)
+
+  const res = await fetch('/api/assets/upload', {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(body.error || `Upload failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function fetchAssetUrls(datasetId: string): Promise<AssetMap> {
+  return apiFetch(`/api/assets/batch-urls?datasetId=${encodeURIComponent(datasetId)}`)
+}
