@@ -46,13 +46,20 @@ export async function POST(request: NextRequest) {
     const safeDesignKey = designKey.replace(/[^a-zA-Z0-9_-]/g, '_')
     const storagePath = `${user.id}/${datasetId}/${safeDesignKey}${ext}`
 
+    // Browsers often misreport MIME types for 3D model files — map explicitly
+    const mimeOverrides: Record<string, string> = {
+      '.glb': 'model/gltf-binary',
+      '.gltf': 'model/gltf+json',
+    }
+    const contentType = mimeOverrides[ext] || file.type || 'application/octet-stream'
+
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     const { error: uploadError } = await supabase.storage
       .from('design-assets')
       .upload(storagePath, buffer, {
-        contentType: file.type || 'application/octet-stream',
+        contentType,
         upsert: true,
       })
 
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
           asset_type: assetType,
           storage_path: storagePath,
           original_filename: file.name,
-          mime_type: file.type || 'application/octet-stream',
+          mime_type: contentType,
           size_bytes: file.size,
         },
         { onConflict: 'design_id,asset_type' }

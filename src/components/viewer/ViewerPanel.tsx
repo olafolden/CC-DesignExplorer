@@ -46,7 +46,6 @@ export function ViewerPanel() {
 
   const activeId = hoveredDesignId ?? selectedDesignId
 
-  // Get the color for this design based on the color metric
   let designColor: string | undefined
   if (activeId && colorScale && colorMetricKey) {
     const row = rawData.find((d) => d.id === activeId)
@@ -60,7 +59,6 @@ export function ViewerPanel() {
 
   const assets = activeId ? assetMap[activeId] : undefined
 
-  // Catalogue view doesn't need a selected design
   if (viewMode === 'catalogue') {
     return (
       <div className="flex flex-col h-full">
