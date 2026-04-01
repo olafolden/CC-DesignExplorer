@@ -74,10 +74,31 @@ export interface ProjectSlice {
   setIsHydrating: (v: boolean) => void
 }
 
+export interface ViewerSettings {
+  backgroundColor: string
+  gridVisible: boolean
+  gridSize: number
+  ambientIntensity: number
+  directionalIntensity: number
+  exposure: number
+  autoRotate: boolean
+  fov: number
+  wireframe: boolean
+  opacity: number
+  doubleSided: boolean
+}
+
+export interface ViewerSettingsSlice {
+  viewerSettings: ViewerSettings
+  setViewerSettings: (partial: Partial<ViewerSettings>) => void
+  resetViewerSettings: () => void
+}
+
 export type AppStore = DataSlice &
   FilterSlice &
   SelectionSlice &
   ViewSlice &
   AssetSlice &
   UISlice &
-  ProjectSlice
+  ProjectSlice &
+  ViewerSettingsSlice

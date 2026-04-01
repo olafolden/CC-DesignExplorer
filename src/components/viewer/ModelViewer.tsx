@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { Box } from 'lucide-react'
+import { useAppStore } from '@/store'
 
 interface ModelViewerProps {
   modelUrl: string | null
@@ -7,49 +8,61 @@ interface ModelViewerProps {
   color?: string
 }
 
-export function ModelViewer({ modelUrl, designId, color }: ModelViewerProps) {
+export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const viewerReady = useRef(false)
   const pendingUrl = useRef<string | null>(null)
+  const viewerSettings = useAppStore((s) => s.viewerSettings)
+
+  const postToViewer = useCallback((msg: Record<string, unknown>) => {
+    iframeRef.current?.contentWindow?.postMessage(msg, '*')
+  }, [])
 
   // Listen for "ready" signal from the iframe viewer
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.data?.type === 'viewerReady') {
         viewerReady.current = true
-        // Send any pending URL that was set before the viewer was ready
+        // Send current settings immediately
+        postToViewer({ type: 'updateSettings', settings: viewerSettings })
+        // Send any pending URL
         if (pendingUrl.current !== null) {
-          iframeRef.current?.contentWindow?.postMessage(
-            { type: 'loadModel', url: pendingUrl.current },
-            '*'
-          )
+          postToViewer({ type: 'loadModel', url: pendingUrl.current })
           pendingUrl.current = null
         }
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [])
+  }, [postToViewer, viewerSettings])
 
   // Send model URL to iframe whenever it changes
   useEffect(() => {
     const url = modelUrl || ''
-
-    if (viewerReady.current && iframeRef.current) {
-      iframeRef.current.contentWindow?.postMessage(
-        { type: 'loadModel', url },
-        '*'
-      )
+    if (viewerReady.current) {
+      postToViewer({ type: 'loadModel', url })
     } else {
-      // Viewer not ready yet — store for when it signals ready
       pendingUrl.current = url
     }
-  }, [modelUrl])
+  }, [modelUrl, postToViewer])
 
-  // Reset ready state if iframe remounts
-  const onIframeLoad = () => {
-    // The viewer.html will send 'viewerReady' once its script runs
-  }
+  // Send settings to iframe whenever they change
+  useEffect(() => {
+    if (viewerReady.current) {
+      postToViewer({ type: 'updateSettings', settings: viewerSettings })
+    }
+  }, [viewerSettings, postToViewer])
+
+  // Listen for resetCamera custom event from toolbar
+  useEffect(() => {
+    function onReset() {
+      if (viewerReady.current) {
+        postToViewer({ type: 'resetCamera' })
+      }
+    }
+    window.addEventListener('viewer:resetCamera', onReset)
+    return () => window.removeEventListener('viewer:resetCamera', onReset)
+  }, [postToViewer])
 
   return (
     <div className="h-full w-full relative">
@@ -58,7 +71,6 @@ export function ModelViewer({ modelUrl, designId, color }: ModelViewerProps) {
         src="/viewer.html"
         className="absolute inset-0 w-full h-full border-0"
         allow="autoplay"
-        onLoad={onIframeLoad}
       />
       {!modelUrl && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground select-none z-10 pointer-events-none bg-background/80">

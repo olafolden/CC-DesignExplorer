@@ -1,8 +1,10 @@
-import { Image, Box, LayoutGrid, ArrowUpDown } from 'lucide-react'
+import { Image, Box, LayoutGrid, ArrowUpDown, Settings2 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { ViewerSettingsPanel } from './ViewerSettingsPanel'
 import { cn } from '@/lib/utils'
 
 export function ViewerToolbar() {
@@ -11,6 +13,11 @@ export function ViewerToolbar() {
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const togglePanelSwap = useAppStore((s) => s.togglePanelSwap)
   const panelsSwapped = useAppStore((s) => s.panelsSwapped)
+
+  const handleResetCamera = () => {
+    // Dispatched via custom event so ModelViewer can pick it up and postMessage
+    window.dispatchEvent(new CustomEvent('viewer:resetCamera'))
+  }
 
   return (
     <div className="flex items-center justify-between px-3 h-9 border-b border-border bg-card/50 shrink-0">
@@ -58,6 +65,24 @@ export function ViewerToolbar() {
             <LayoutGrid className="h-3.5 w-3.5" />
           </Button>
         </div>
+
+        {viewMode === '3d' && (
+          <Popover>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Settings2 className="h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Viewer settings</TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-64" align="end" side="bottom">
+              <ViewerSettingsPanel onResetCamera={handleResetCamera} />
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
