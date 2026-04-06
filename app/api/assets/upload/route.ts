@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { validateExtension, validateFileSize, validateMagicBytes } from '@/lib/file-validation'
 
 // POST /api/assets/upload — upload a single asset file to Supabase Storage
 // Expects multipart form data with: file, datasetId, designKey, assetType
@@ -24,6 +25,27 @@ export async function POST(request: NextRequest) {
 
     if (assetType !== 'image' && assetType !== 'model') {
       return NextResponse.json({ error: 'assetType must be "image" or "model"' }, { status: 400 })
+    }
+
+    // Validate file extension
+    const extResult = validateExtension(file.name)
+    if (!extResult.valid) {
+      return NextResponse.json({ error: extResult.error }, { status: 400 })
+    }
+
+    // Validate file size
+    const sizeResult = validateFileSize(file.size)
+    if (!sizeResult.valid) {
+      return NextResponse.json({ error: sizeResult.error }, { status: 400 })
+    }
+
+    // Read file buffer (used for both validation and upload)
+    const arrayBuffer = await file.arrayBuffer()
+
+    // Validate file content matches declared extension
+    const magicResult = validateMagicBytes(arrayBuffer, extResult.ext)
+    if (!magicResult.valid) {
+      return NextResponse.json({ error: magicResult.error }, { status: 400 })
     }
 
     // Look up the design row to get its ID
@@ -53,7 +75,6 @@ export async function POST(request: NextRequest) {
     }
     const contentType = mimeOverrides[ext] || file.type || 'application/octet-stream'
 
-    const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     const { error: uploadError } = await supabase.storage
