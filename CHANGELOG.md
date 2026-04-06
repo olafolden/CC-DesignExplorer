@@ -1,0 +1,159 @@
+# Design Explorer — Change Log
+
+---
+
+## v2: Next.js Migration
+
+### Phase 5 — Polish (2026-03-30)
+- Loading skeleton: shows spinner + skeleton bars in chart/viewer area during hydration
+- Signed URL expiration: useRefreshAssets hook auto-re-fetches asset URLs on image 403 errors
+- ImageViewer and CatalogueView both trigger asset URL refresh on load failures
+- Delete dataset UI: button in project section to delete current dataset with confirmation
+- ProjectSelector refactored: extracted shared loadDataset helper, cleaner state management
+- Build passes, TypeScript clean
+
+### Phase 4 — Multi-User + Projects (2026-03-30)
+- Project selector in sidebar: dropdown to switch projects, create new, delete existing
+- Switching projects clears current data/assets and loads the new project's latest dataset + assets
+- New project flow: inline name input with Enter or Create button
+- Delete project: confirmation dialog, cascades to datasets/designs/assets
+- User preferences API route (GET/PUT /api/preferences): persists theme and default project
+- Theme persistence: toggling theme saves to server via user_preferences table
+- Hydration loads preferences in parallel with projects, applies saved theme and default project
+- API helpers added: fetchPreferences, updatePreferences, fetchProjectDatasets
+- Build passes, TypeScript clean
+
+### Phase 3 — Asset Storage (2026-03-30)
+- API routes:
+  - POST /api/assets/upload — multipart upload to Supabase Storage, upserts asset record
+  - GET /api/assets/batch-urls — returns signed URLs for all assets in a dataset (1h expiry)
+- AssetDropZone rewritten: uploads files to server with progress indicator instead of blob URLs
+- file-ingestion.ts: `processAssetDrop`/`processFileInput` replaced with `collectAssetFiles` (returns raw File objects for server upload)
+- AssetSlice updated: removed `revokeAllUrls`, added `mergeAssetMap`/`clearAssets` for server URL management
+- useHydrate hook: now fetches asset URLs on mount via `fetchAssetUrls()`
+- Client API helpers: added `uploadAsset()` and `fetchAssetUrls()` to src/lib/api.ts
+- Supabase Storage RLS policies added: INSERT/UPDATE/SELECT/DELETE scoped to user's own folder
+- Upload route: File converted to Buffer for Next.js compatibility, design key sanitized
+- Build passes, TypeScript clean
+
+### Phase 2 — Data Persistence + Real Auth (2026-03-30)
+- Real Supabase Auth: login page with email/password sign-up and sign-in
+- Auth middleware (middleware.ts): redirects unauthenticated users to /login
+- Supabase middleware helper (src/lib/supabase/middleware.ts): cookie-based session management
+- API routes:
+  - POST/GET /api/projects — create and list user projects
+  - DELETE /api/projects/[id] — delete project with cascade
+  - POST /api/datasets — upload JSON, server-side parse, bulk insert designs
+  - GET /api/datasets/[id] — fetch dataset metadata + all design rows
+  - DELETE /api/datasets/[id] — delete dataset with cascade
+  - GET /api/projects/[id]/datasets — list datasets for a project
+- ProjectSlice added to Zustand store (currentProjectId, currentDatasetId, projects, isHydrating)
+- DropZone modified: validates locally, then uploads to server API, auto-creates default project
+- useHydrate hook: on mount, loads user's latest project and dataset from server
+- Client-side API helpers (src/lib/api.ts): typed fetch wrappers for all routes
+- .env.local wired with real Supabase URL + anon key
+
+### Phase 1 — Next.js Shell + Placeholder Auth (2026-03-30)
+- Branch `v2/nextjs-migration` created from `main`
+- Vite removed: deleted vite.config.ts, index.html, main.tsx, tsconfig.node.json
+- Next.js 15 App Router scaffolded with Tailwind v4 via @tailwindcss/postcss
+- ExplorerClient.tsx: 'use client' wrapper replacing App.tsx + main.tsx
+- App Router: root layout, (app) group layout, main page with dynamic import (ssr: false)
+- Placeholder login page at /login with skip button (dev mode)
+- Dynamic imports for ECharts (ParallelCoordinates) and Three.js (ModelViewer) — SSR-safe
+- Supabase client stubs created (src/lib/supabase/client.ts, server.ts) with placeholder env vars
+- ESLint config updated: removed react-refresh/vite plugin for Next.js compatibility
+- useObjectUrl refactored from useState+useEffect to useMemo for React 19 strict mode
+- shadcn components.json updated for RSC (rsc: true, removed resolvedPaths)
+- Build passes, dev server runs, all existing UI renders identically to v1
+
+### Phase 0 — Supabase Setup (2026-03-30)
+- Supabase project created (iorfzztfqcbhbulqxmfg)
+- SQL migration: 5 tables (projects, datasets, designs, assets, user_preferences)
+- Row Level Security enabled on all tables with per-user policies
+- Storage bucket `design-assets` created (private)
+- Migration script saved to supabase/migrations/001_initial_schema.sql
+
+---
+
+## v1: Vite SPA
+
+### Phase 8 — Design Selector & Catalogue View (2026-03-30)
+- DesignSelector: searchable dropdown in sidebar, filters design IDs by substring, click to select
+- CatalogueView: responsive thumbnail grid showing filtered designs' 2D images
+- viewMode extended to '2d' | '3d' | 'catalogue' with LayoutGrid button in ViewerToolbar
+- DesignSelector: X button to clear selection (deselect highlighted design in PCP)
+- Thumbnail click selects design in catalogue (stays in catalogue view), hover updates DesignInfo
+- Catalogue thumbnails: 3D button appears on hover (top-right) to jump directly to 3D viewer
+- Color metric shown as thin color bar on each thumbnail card
+- Selection highlight: selected design rendered as bright thick line (2nd ECharts series, z=2) with glow
+- Catalogue highlights selected thumbnail with ring + auto-scrolls into view on external selection
+- ARCHITECTURE.md updated with Phase 8 docs, component hierarchy, folder structure
+
+### Phase 7 — Polish & Panel Swap (2026-03-30)
+- Panel swap: toggle button (ArrowUpDown) in ViewerToolbar swaps viewer and chart positions
+- panelsSwapped state in UISlice, MainContent renders panels in swapped order
+- ErrorBoundary: wraps AppShell and viewer content, graceful fallback with retry button
+- Keyboard shortcuts: Esc (clear selection), T (toggle theme), [ (toggle sidebar)
+- Transparent chart background: prevents ECharts theme from painting over app background
+
+### Phase 6 — Color Mapping & Controls (2026-03-29)
+- MetricSelector: dropdown grouped by inputs (sky) / outputs (amber), sets colorMetricKey in store
+- FilterSummary: shows active brush ranges as badges, filtered/total count, "Clear all" button
+- DesignInfo: selected design parameter card with input/output sections, color dot on active metric
+- Sidebar placeholders replaced with real controls
+- Color sync: metric selector drives chart line colors + 3D model material color via shared useColorScale
+
+### Phase 5 — 2D/3D Viewer (2026-03-29)
+- ViewerPanel: orchestrates 2D/3D display based on viewMode + selected/hovered design ID
+- ViewerToolbar: 2D/3D segmented toggle, displays selected design ID badge
+- ImageViewer: renders image from assetMap blob URL, fade transition, skeleton loader, "no image" fallback
+- ModelViewer: R3F Canvas with frameloop=demand, dpr=[1,2], antialias
+- ModelScene: ambient + directional lights, OrbitControls, Environment preset=studio, Suspense with wireframe fallback
+- DesignModel: useGLTF for GLB loading, auto-center/scale, applies color metric to mesh materials
+- Color mapping: same blue-to-red scale from chart applied to 3D mesh material
+- Hover preview: hoveredDesignId takes priority over selectedDesignId for live preview
+- Empty states: context-aware messages (no data loaded vs no design selected)
+
+### Phase 4 — Parallel Coordinates Chart (2026-03-29)
+- ColumnMeta: added `role: 'input' | 'output'` field
+- JSON format: supports `{ columns: { inputs, outputs }, data }` wrapper (backwards compatible with flat arrays)
+- file-ingestion: parses wrapper format, sorts columns inputs-first then outputs
+- test-data: 4 input params (floor_area, num_floors, glazing_ratio, wall_thickness) + 5 outputs (cost, carbon, energy_use, daylight_factor, structural_weight)
+- ParallelCoordinates: ECharts parallel plot with `notMerge`, `lazyUpdate`
+- Axis coloring: input axes sky-blue, output axes amber — labels and axis lines
+- useChartOption: memoized option builder, color-maps lines by selected metric (blue-to-red HSL)
+- useChartEvents: `axisareaselected` brush handler (debounced via rAF) -> store, click -> select design
+- Filtered lines dim to 0.04 opacity, active lines at 0.55
+- DataSummary: now shows input count (sky) and output count (amber) instead of numeric/categorical
+- MainContent: renders chart when data loaded, empty state otherwise
+
+### Phase 3 — Data Ingestion (2026-03-29)
+- DropZone: drag-drop or click for data.json, visual states (idle/hover/loaded/error), clear button
+- AssetDropZone: drag-drop folder or click (webkitdirectory fallback), processes images + models
+- DataSummary: shows design count, parameter count, numeric vs categorical breakdown
+- data-slice updated: setRawData now initializes filteredIds, colorMetricKey, resets selection
+- clearData revokes all asset URLs and resets full store
+- file-ingestion.ts: auto-detect ID field, infer ColumnMeta (min/max), folder traversal
+- SidebarContent wired with real DropZone + AssetDropZone replacing placeholders
+- test-data/data.json: 20 sample designs with 6 numeric parameters
+
+### Phase 2 — Layout Shell (2026-03-29)
+- Sidebar: collapsible w-64 <-> w-12, icon-only collapsed state with tooltips
+- SidebarHeader: Compass logo, app title, collapse toggle
+- SidebarContent: organized sections (Data, Visualization, Selection) with placeholder slots
+- Collapsed sidebar: icon buttons with tooltip hints for future features
+- ThemeToggle: supports both full-width and icon-only modes
+- MainContent: resizable split pane (viewer top / chart bottom) via drag handle
+- ResizeHandle: custom draggable divider with min 120px per panel
+- Empty states: polished icons + guidance text for viewer and chart areas
+
+### Phase 1 — Scaffolding (2026-03-29)
+- Vite 8 + React 19 + TypeScript + Tailwind v4 + shadcn/ui init
+- 13 shadcn components added
+- Zustand store: 6 slices (data, filter, selection, view, asset, ui)
+- Types: DesignIteration, ColumnMeta, AssetEntry
+- Lib: colors.ts (HSL interpolation), file-ingestion.ts (JSON + folder parser)
+- Hooks: useTheme, useFilteredDesigns, useColorScale, useObjectUrl
+- Basic layout shell with placeholder sidebar + main content
+- GitHub repo created: olafolden/CC-DesignExplorer
