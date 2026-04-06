@@ -4,6 +4,19 @@
 
 ## v2: Next.js Migration
 
+### State Management Separation (2026-04-06)
+- Server state migrated from Zustand to TanStack Query (React Query)
+- Query hooks: useProjects, useDataset, useAssetUrls, usePreferences, useProjectDatasets
+- Mutation hooks: useCreateProject, useDeleteProject, useDeleteDataset, useUploadDataset, useUploadAsset
+- QueryProvider wraps app in ExplorerClient (5min stale, 30min GC, no window refocus)
+- All 15+ components migrated from `useAppStore(s => s.rawData)` to `useDataset()` pattern
+- Zustand slimmed to UI-only state: removed DataSlice, AssetSlice; slimmed ProjectSlice, FilterSlice
+- Filtered designs now derived via `useMemo` from React Query data + Zustand brush ranges
+- Added `resetUIForNewDataset()` action to clear brush ranges, selections, and color metric
+- Deleted: useHydrate.ts, asset-slice.ts, data-slice.ts (all replaced by React Query)
+- Store tests rewritten for new shape; filter-slice tests now test brush range management
+- ARCHITECTURE.md updated: new State Management section, updated Data Flow, folder structure
+
 ### Secure File Uploads (2026-04-06)
 - File validation utility (src/lib/file-validation.ts): extension whitelist, 50MB size limit, magic byte verification for PNG/JPEG/WebP/GLB/GLTF
 - Upload API route hardened: validates extension, size, and content before design lookup or storage upload
