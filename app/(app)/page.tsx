@@ -1,10 +1,4 @@
-'use client'
-
-import dynamic from 'next/dynamic'
-
-const ExplorerClient = dynamic(() => import('@/components/ExplorerClient'), {
-  ssr: false,
-})
+import ExplorerClient from '@/components/ExplorerClient'
 
 export default function ExplorePage() {
   return <ExplorerClient />

@@ -84,7 +84,8 @@ CC_DesignExplorer/
 │   │   └── page.tsx                       # Login page (server-rendered)
 │   ├── (app)/
 │   │   ├── layout.tsx                     # Auth-protected layout (checks session)
-│   │   └── page.tsx                       # Main page → renders ExplorerClient
+│   │   ├── loading.tsx                    # Streaming SSR skeleton (sidebar + main)
+│   │   └── page.tsx                       # Main page → renders ExplorerClient (SSR)
 │   └── api/
 │       ├── projects/
 │       │   ├── route.ts                   # GET (list) + POST (create)
@@ -562,26 +563,29 @@ User brushes axis
 
 ## SSR & Dynamic Imports
 
-The explorer is a `'use client'` application. Next.js provides the routing shell, auth middleware, and API routes only.
+The explorer uses **granular SSR** — the entire app shell is server-rendered, with only browser-dependent components (ECharts, Three.js) opting out via `dynamic({ ssr: false })`.
 
 | Component / Area          | SSR? | Strategy                                        |
 |--------------------------|------|-------------------------------------------------|
-| `ExplorerClient`          | No   | `dynamic(() => import(...), { ssr: false })`    |
+| `ExplorerClient`          | Yes  | `'use client'` — SSR renders with Zustand defaults, hydrates on client |
+| `AppShell`, `Sidebar`     | Yes  | Inside `'use client'` tree — SSR'd with defaults |
+| `ImageViewer`             | Yes  | Inside `'use client'` tree                       |
 | `ParallelCoordinates`     | No   | `dynamic()` — ECharts accesses `window`          |
 | `ModelViewer`             | No   | `dynamic()` — Three.js/WebGL requires browser   |
-| `AppShell`, `Sidebar`     | No   | Inside `'use client'` tree (Zustand-dependent)  |
-| `ImageViewer`             | No   | Inside `'use client'` tree                       |
 | `Login page`              | Yes  | Server-rendered simple form                      |
 | `(app)/layout.tsx`        | Yes  | Checks auth, renders `{children}`               |
+| `(app)/loading.tsx`       | Yes  | Skeleton fallback for streaming SSR              |
 | API route handlers        | N/A  | Server only                                      |
 
 ### Main Page Pattern
 ```typescript
 // app/(app)/page.tsx (server component — thin wrapper)
-import dynamic from 'next/dynamic'
-const ExplorerClient = dynamic(() => import('@/components/ExplorerClient'), { ssr: false })
-export default function Page() { return <ExplorerClient /> }
+import ExplorerClient from '@/components/ExplorerClient'
+export default function ExplorePage() { return <ExplorerClient /> }
 ```
+
+### Loading Skeleton
+`app/(app)/loading.tsx` is a pure server component that renders a sidebar + main area skeleton. It provides instant visual feedback before client-side hydration completes.
 
 ---
 
