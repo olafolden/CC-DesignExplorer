@@ -1,25 +1,12 @@
-import type { ColumnMeta, DesignIteration } from '@/types/design'
-import type { AssetEntry } from '@/types/assets'
-
 export interface BrushRange {
   axisIndex: number
   key: string
   range: [number, number]
 }
 
-export interface DataSlice {
-  rawData: DesignIteration[]
-  columns: ColumnMeta[]
-  isDataLoaded: boolean
-  setRawData: (data: DesignIteration[], columns: ColumnMeta[]) => void
-  clearData: () => void
-}
-
 export interface FilterSlice {
   brushRanges: BrushRange[]
-  filteredIds: Set<string>
   setBrushRanges: (ranges: BrushRange[]) => void
-  recomputeFilteredIds: () => void
   clearFilters: () => void
 }
 
@@ -37,14 +24,6 @@ export interface ViewSlice {
   setColorMetricKey: (key: string | null) => void
 }
 
-export interface AssetSlice {
-  assetMap: Record<string, AssetEntry>
-  isAssetsLoaded: boolean
-  setAssetMap: (map: Record<string, AssetEntry>) => void
-  mergeAssetMap: (partial: Record<string, AssetEntry>) => void
-  clearAssets: () => void
-}
-
 export interface UISlice {
   theme: 'light' | 'dark'
   sidebarCollapsed: boolean
@@ -56,22 +35,12 @@ export interface UISlice {
   togglePanelSwap: () => void
 }
 
-export interface ProjectInfo {
-  id: string
-  name: string
-  created_at: string
-  updated_at: string
-}
-
 export interface ProjectSlice {
   currentProjectId: string | null
   currentDatasetId: string | null
-  projects: ProjectInfo[]
-  isHydrating: boolean
   setCurrentProjectId: (id: string | null) => void
   setCurrentDatasetId: (id: string | null) => void
-  setProjects: (projects: ProjectInfo[]) => void
-  setIsHydrating: (v: boolean) => void
+  resetUIForNewDataset: () => void
 }
 
 export interface ViewerSettings {
@@ -94,11 +63,9 @@ export interface ViewerSettingsSlice {
   resetViewerSettings: () => void
 }
 
-export type AppStore = DataSlice &
-  FilterSlice &
+export type AppStore = FilterSlice &
   SelectionSlice &
   ViewSlice &
-  AssetSlice &
   UISlice &
   ProjectSlice &
   ViewerSettingsSlice

@@ -18,7 +18,7 @@ export function DropZone() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
-  const clearData = useAppStore((s) => s.clearData)
+  const resetUIForNewDataset = useAppStore((s) => s.resetUIForNewDataset)
   const setCurrentProjectId = useAppStore((s) => s.setCurrentProjectId)
   const setCurrentDatasetId = useAppStore((s) => s.setCurrentDatasetId)
   const currentProjectId = useAppStore((s) => s.currentProjectId)
@@ -113,13 +113,13 @@ export function DropZone() {
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      clearData()
+      resetUIForNewDataset()
       setCurrentDatasetId(null)
       setState('idle')
       setFileName(null)
       setError(null)
     },
-    [clearData, setCurrentDatasetId]
+    [resetUIForNewDataset, setCurrentDatasetId]
   )
 
   const displayState = isDataLoaded ? 'loaded' : state

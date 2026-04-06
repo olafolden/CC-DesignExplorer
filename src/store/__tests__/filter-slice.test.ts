@@ -1,75 +1,59 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useAppStore } from '../index'
-import type { DesignIteration } from '@/types/design'
-import type { ColumnMeta } from '@/types/design'
-
-const testData: DesignIteration[] = [
-  { id: 'a', x: 10, y: 100 },
-  { id: 'b', x: 20, y: 200 },
-  { id: 'c', x: 30, y: 300 },
-  { id: 'd', x: 40, y: 400 },
-]
-
-const testColumns: ColumnMeta[] = [
-  { key: 'x', label: 'X', type: 'number', role: 'input', min: 10, max: 40 },
-  { key: 'y', label: 'Y', type: 'number', role: 'output', min: 100, max: 400 },
-]
+import type { BrushRange } from '../types'
 
 describe('FilterSlice', () => {
   beforeEach(() => {
-    // Reset store and load test data
-    const store = useAppStore.getState()
-    store.setRawData(testData, testColumns)
+    useAppStore.setState({ brushRanges: [] })
   })
 
-  it('initializes filteredIds to all IDs when data is loaded', () => {
-    const { filteredIds } = useAppStore.getState()
-    expect(filteredIds.size).toBe(4)
-    expect(filteredIds.has('a')).toBe(true)
-    expect(filteredIds.has('d')).toBe(true)
+  it('initializes with empty brushRanges', () => {
+    expect(useAppStore.getState().brushRanges).toEqual([])
   })
 
-  it('recomputeFilteredIds with no brushes returns all IDs', () => {
-    useAppStore.getState().recomputeFilteredIds()
-    const { filteredIds } = useAppStore.getState()
-    expect(filteredIds.size).toBe(4)
+  it('setBrushRanges updates brush ranges', () => {
+    const ranges: BrushRange[] = [
+      { axisIndex: 0, key: 'x', range: [15, 35] },
+    ]
+    useAppStore.getState().setBrushRanges(ranges)
+    expect(useAppStore.getState().brushRanges).toEqual(ranges)
   })
 
-  it('filters by a single brush range', () => {
+  it('setBrushRanges replaces previous ranges', () => {
     useAppStore.getState().setBrushRanges([
       { axisIndex: 0, key: 'x', range: [15, 35] },
     ])
-    const { filteredIds } = useAppStore.getState()
-    // x: 20, 30 match; 10, 40 are outside
-    expect(filteredIds.size).toBe(2)
-    expect(filteredIds.has('b')).toBe(true)
-    expect(filteredIds.has('c')).toBe(true)
-    expect(filteredIds.has('a')).toBe(false)
-    expect(filteredIds.has('d')).toBe(false)
+    const newRanges: BrushRange[] = [
+      { axisIndex: 1, key: 'y', range: [250, 350] },
+    ]
+    useAppStore.getState().setBrushRanges(newRanges)
+    expect(useAppStore.getState().brushRanges).toEqual(newRanges)
   })
 
-  it('filters with multiple brush ranges (AND logic)', () => {
+  it('clearFilters resets brush ranges to empty', () => {
     useAppStore.getState().setBrushRanges([
       { axisIndex: 0, key: 'x', range: [15, 35] },
       { axisIndex: 1, key: 'y', range: [250, 350] },
     ])
-    const { filteredIds } = useAppStore.getState()
-    // x in [15,35]: b(20), c(30)
-    // y in [250,350]: c(300)
-    // AND: only c
-    expect(filteredIds.size).toBe(1)
-    expect(filteredIds.has('c')).toBe(true)
-  })
-
-  it('clearFilters resets to all IDs and clears brush ranges', () => {
-    useAppStore.getState().setBrushRanges([
-      { axisIndex: 0, key: 'x', range: [15, 25] },
-    ])
-    expect(useAppStore.getState().filteredIds.size).toBe(1)
+    expect(useAppStore.getState().brushRanges.length).toBe(2)
 
     useAppStore.getState().clearFilters()
-    const { filteredIds, brushRanges } = useAppStore.getState()
-    expect(filteredIds.size).toBe(4)
-    expect(brushRanges).toHaveLength(0)
+    expect(useAppStore.getState().brushRanges).toEqual([])
+  })
+
+  it('resetUIForNewDataset clears brushRanges along with other UI state', () => {
+    useAppStore.getState().setBrushRanges([
+      { axisIndex: 0, key: 'x', range: [15, 35] },
+    ])
+    useAppStore.getState().setSelectedDesignId('test-id')
+    useAppStore.getState().setColorMetricKey('x')
+
+    useAppStore.getState().resetUIForNewDataset()
+
+    const state = useAppStore.getState()
+    expect(state.brushRanges).toEqual([])
+    expect(state.selectedDesignId).toBeNull()
+    expect(state.hoveredDesignId).toBeNull()
+    expect(state.colorMetricKey).toBeNull()
   })
 })

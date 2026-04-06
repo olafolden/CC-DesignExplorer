@@ -1,16 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { ImageOff, Box } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { useDataset } from '@/hooks/queries/use-dataset'
 import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useColorScale } from '@/hooks/useColorScale'
+import { useFilteredDesigns } from '@/hooks/useFilteredDesigns'
 import { useRefreshAssets } from '@/hooks/useRefreshAssets'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
 export function CatalogueView() {
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
-  const filteredIds = useAppStore((s) => s.filteredIds)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
   const setHoveredDesignId = useAppStore((s) => s.setHoveredDesignId)
@@ -18,9 +17,8 @@ export function CatalogueView() {
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
 
-  const { data: datasetResponse } = useDataset(currentDatasetId)
-  const rawData = datasetResponse?.data ?? []
   const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
+  const filteredDesigns = useFilteredDesigns()
 
   const selectedRef = useRef<HTMLButtonElement>(null)
   const refreshAssets = useRefreshAssets()
@@ -31,8 +29,6 @@ export function CatalogueView() {
       selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [selectedDesignId])
-
-  const filteredDesigns = rawData.filter((d) => filteredIds.has(d.id))
 
   if (filteredDesigns.length === 0) {
     return (

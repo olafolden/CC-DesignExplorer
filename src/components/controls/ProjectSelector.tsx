@@ -21,8 +21,7 @@ export function ProjectSelector() {
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const setCurrentProjectId = useAppStore((s) => s.setCurrentProjectId)
   const setCurrentDatasetId = useAppStore((s) => s.setCurrentDatasetId)
-  const clearData = useAppStore((s) => s.clearData)
-  const clearAssets = useAppStore((s) => s.clearAssets)
+  const resetUIForNewDataset = useAppStore((s) => s.resetUIForNewDataset)
 
   const { data: projects = [] } = useProjects()
   const { data: datasets = [] } = useProjectDatasets(currentProjectId)
@@ -42,19 +41,14 @@ export function ProjectSelector() {
       setLoading(true)
 
       try {
-        clearData()
-        clearAssets()
+        resetUIForNewDataset()
         setCurrentProjectId(projectId)
-        // Dataset loading happens automatically via useProjectDatasets + useDataset
-        // We need to set the first dataset as current
-        // Since we just switched project, datasets query will refetch.
-        // For now, clear the dataset id — the effect below or user action will set it.
         setCurrentDatasetId(null)
       } finally {
         setLoading(false)
       }
     },
-    [currentProjectId, clearData, clearAssets, setCurrentProjectId, setCurrentDatasetId]
+    [currentProjectId, resetUIForNewDataset, setCurrentProjectId, setCurrentDatasetId]
   )
 
   // Auto-select first dataset when project datasets load and no dataset is selected
@@ -89,15 +83,14 @@ export function ProjectSelector() {
       if (remaining.length > 0) {
         await switchProject(remaining[0].id)
       } else {
-        clearData()
-        clearAssets()
+        resetUIForNewDataset()
         setCurrentProjectId(null)
         setCurrentDatasetId(null)
       }
     } catch {
       // Failed to delete
     }
-  }, [currentProjectId, projects, deleteProjectMutation, switchProject, clearData, clearAssets, setCurrentProjectId, setCurrentDatasetId])
+  }, [currentProjectId, projects, deleteProjectMutation, switchProject, resetUIForNewDataset, setCurrentProjectId, setCurrentDatasetId])
 
   const handleDeleteDataset = useCallback(async () => {
     if (!currentDatasetId || !currentProjectId) return
@@ -105,16 +98,12 @@ export function ProjectSelector() {
 
     try {
       await deleteDatasetMutation.mutateAsync(currentDatasetId)
-      clearData()
-      clearAssets()
-
-      // The mutation invalidates queries, so datasets will refetch.
-      // Clear current dataset; auto-select will pick the next one if available.
+      resetUIForNewDataset()
       setCurrentDatasetId(null)
     } catch {
       // Failed to delete
     }
-  }, [currentDatasetId, currentProjectId, deleteDatasetMutation, clearData, clearAssets, setCurrentDatasetId])
+  }, [currentDatasetId, currentProjectId, deleteDatasetMutation, resetUIForNewDataset, setCurrentDatasetId])
 
   return (
     <div className="space-y-2">
