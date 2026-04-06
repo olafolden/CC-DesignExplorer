@@ -6,6 +6,7 @@ import { createViewSlice } from './slices/view-slice'
 import { createUISlice } from './slices/ui-slice'
 import { createProjectSlice } from './slices/project-slice'
 import { createViewerSettingsSlice } from './slices/viewer-settings-slice'
+import { createParameterSettingsSlice } from './slices/parameter-settings-slice'
 import type { AppStore } from './types'
 
 export const useAppStore = create<AppStore>()(
@@ -17,6 +18,7 @@ export const useAppStore = create<AppStore>()(
       ...createUISlice(...a),
       ...createProjectSlice(...a),
       ...createViewerSettingsSlice(...a),
+      ...createParameterSettingsSlice(...a),
     }),
     { name: 'DesignExplorerStore' }
   )
