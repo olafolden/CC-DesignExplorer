@@ -4,6 +4,13 @@
 
 ## v2: Next.js Migration
 
+### Granular SSR Optimization (2026-04-06)
+- Removed `ssr: false` dynamic import from app/(app)/page.tsx — ExplorerClient now SSR'd
+- Next.js renders full app shell HTML on server (sidebar, layout, empty states) with Zustand defaults
+- Only ECharts (ParallelCoordinates) and Three.js (ModelViewer) retain `ssr: false` dynamic imports
+- Added `app/(app)/loading.tsx` — pure server component skeleton for streaming SSR
+- ARCHITECTURE.md SSR section updated to reflect granular approach
+
 ### State Management Separation (2026-04-06)
 - Server state migrated from Zustand to TanStack Query (React Query)
 - Query hooks: useProjects, useDataset, useAssetUrls, usePreferences, useProjectDatasets
