@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic'
 import { Box, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
+import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useColorScale } from '@/hooks/useColorScale'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ViewerToolbar } from './ViewerToolbar'
@@ -15,7 +17,8 @@ const ModelViewer = dynamic(
 )
 
 function EmptyState() {
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
+  const { isSuccess: isDataLoaded } = useDataset(currentDatasetId)
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-muted-foreground select-none">
@@ -39,10 +42,13 @@ export function ViewerPanel() {
   const viewMode = useAppStore((s) => s.viewMode)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const hoveredDesignId = useAppStore((s) => s.hoveredDesignId)
-  const assetMap = useAppStore((s) => s.assetMap)
-  const rawData = useAppStore((s) => s.rawData)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
+
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
 
   const activeId = hoveredDesignId ?? selectedDesignId
 

@@ -1,21 +1,26 @@
 import { useEffect, useRef } from 'react'
 import { ImageOff, Box } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
+import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useColorScale } from '@/hooks/useColorScale'
 import { useRefreshAssets } from '@/hooks/useRefreshAssets'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
 export function CatalogueView() {
-  const rawData = useAppStore((s) => s.rawData)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const filteredIds = useAppStore((s) => s.filteredIds)
-  const assetMap = useAppStore((s) => s.assetMap)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
   const setHoveredDesignId = useAppStore((s) => s.setHoveredDesignId)
   const setViewMode = useAppStore((s) => s.setViewMode)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
+
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
 
   const selectedRef = useRef<HTMLButtonElement>(null)
   const refreshAssets = useRefreshAssets()

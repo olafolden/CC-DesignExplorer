@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { BarChart3, Loader2, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
+import { useProjects } from '@/hooks/queries/use-projects'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ResizeHandle } from './ResizeHandle'
 import { ViewerPanel } from '@/components/viewer/ViewerPanel'
@@ -46,9 +48,11 @@ function HydrationSkeleton() {
 export function MainContent() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartRatio, setChartRatio] = useState(DEFAULT_CHART_RATIO)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
-  const isHydrating = useAppStore((s) => s.isHydrating)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const panelsSwapped = useAppStore((s) => s.panelsSwapped)
+
+  const { isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const { isLoading: isHydrating } = useProjects()
 
   const handleResize = useCallback(
     (deltaY: number) => {

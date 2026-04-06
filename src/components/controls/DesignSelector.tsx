@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Search, X } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import { cn } from '@/lib/utils'
 
 export function DesignSelector() {
-  const rawData = useAppStore((s) => s.rawData)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
+
+  const { data: datasetResponse, isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
 
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)

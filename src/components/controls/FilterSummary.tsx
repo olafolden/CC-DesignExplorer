@@ -1,12 +1,15 @@
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import { Badge } from '@/components/ui/badge'
 
 export function FilterSummary() {
   const brushRanges = useAppStore((s) => s.brushRanges)
   const filteredIds = useAppStore((s) => s.filteredIds)
-  const rawData = useAppStore((s) => s.rawData)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const clearFilters = useAppStore((s) => s.clearFilters)
+
+  const { data: datasetResponse, isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
 
   if (!isDataLoaded || brushRanges.length === 0) return null
 

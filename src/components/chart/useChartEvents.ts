@@ -1,13 +1,17 @@
 import { useCallback, useRef } from 'react'
 import type { EChartsType } from 'echarts'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import type { BrushRange } from '@/store/types'
 
 export function useChartEvents() {
-  const columns = useAppStore((s) => s.columns)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const setBrushRanges = useAppStore((s) => s.setBrushRanges)
   const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
-  const rawData = useAppStore((s) => s.rawData)
+
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const columns = datasetResponse?.columns ?? []
 
   const rafId = useRef<number>(0)
 

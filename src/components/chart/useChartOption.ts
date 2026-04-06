@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import { getColorHex } from '@/lib/colors'
 import type { EChartsOption } from 'echarts'
 
@@ -8,14 +9,16 @@ const INPUT_AXIS_COLOR = '#38bdf8'   // sky-400
 const OUTPUT_AXIS_COLOR = '#fbbf24'  // amber-400
 
 export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
-  const rawData = useAppStore((s) => s.rawData)
-  const columns = useAppStore((s) => s.columns)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const columns = datasetResponse?.columns ?? []
 
   return useMemo(() => {
-    if (!isDataLoaded || rawData.length === 0) return null
+    if (rawData.length === 0) return null
 
     const numericCols = columns.filter((c) => c.type === 'number')
     if (numericCols.length === 0) return null
@@ -169,5 +172,5 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
     }
 
     return option
-  }, [rawData, columns, colorMetricKey, selectedDesignId, isDataLoaded, theme])
+  }, [rawData, columns, colorMetricKey, selectedDesignId, theme])
 }

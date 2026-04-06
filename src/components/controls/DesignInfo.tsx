@@ -1,12 +1,16 @@
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import { useColorScale } from '@/hooks/useColorScale'
 
 export function DesignInfo() {
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
-  const rawData = useAppStore((s) => s.rawData)
-  const columns = useAppStore((s) => s.columns)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
+
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const columns = datasetResponse?.columns ?? []
 
   if (!selectedDesignId) return null
 

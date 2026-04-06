@@ -2,8 +2,9 @@ import { useCallback, useRef, useState } from 'react'
 import { FolderOpen, Check, AlertCircle, X, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
+import { useUploadAsset } from '@/hooks/mutations/use-upload-asset'
 import { collectAssetFiles } from '@/lib/file-ingestion'
-import { uploadAsset } from '@/lib/api'
 import { MAX_FILE_SIZE_BYTES } from '@/lib/file-validation'
 import { Button } from '@/components/ui/button'
 
@@ -15,15 +16,15 @@ export function AssetDropZone() {
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const isAssetsLoaded = useAppStore((s) => s.isAssetsLoaded)
-  const assetMap = useAppStore((s) => s.assetMap)
-  const mergeAssetMap = useAppStore((s) => s.mergeAssetMap)
-  const clearAssets = useAppStore((s) => s.clearAssets)
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
+
+  const { data: assetMap = {}, isSuccess: hasAssets } = useAssetUrls(currentDatasetId)
+  const uploadAssetMutation = useUploadAsset()
 
   const assetCount = Object.keys(assetMap).length
   const imageCount = Object.values(assetMap).filter((a) => a.imageUrl).length
   const modelCount = Object.values(assetMap).filter((a) => a.modelUrl).length
+  const isAssetsLoaded = hasAssets && assetCount > 0
 
   const uploadFiles = useCallback(
     async (files: { name: string; file: File; designKey: string; assetType: 'image' | 'model' }[]) => {
@@ -55,7 +56,12 @@ export function AssetDropZone() {
 
       for (const { file, designKey, assetType } of files) {
         try {
-          await uploadAsset(file, currentDatasetId, designKey, assetType)
+          await uploadAssetMutation.mutateAsync({
+            file,
+            datasetId: currentDatasetId,
+            designKey,
+            assetType,
+          })
           uploaded++
           setProgress({ done: uploaded, total: files.length })
         } catch (e) {
@@ -69,21 +75,15 @@ export function AssetDropZone() {
         return
       }
 
-      // Fetch signed URLs for the uploaded assets
-      const { fetchAssetUrls } = await import('@/lib/api')
-      try {
-        const urls = await fetchAssetUrls(currentDatasetId)
-        mergeAssetMap(urls)
-      } catch {
-        // Assets uploaded but URL fetch failed — user can reload
-      }
+      // The mutation's onSuccess already invalidates the assetUrls query,
+      // so React Query will refetch signed URLs automatically.
 
       setState('loaded')
       if (errors.length > 0) {
         setError(`${uploaded}/${files.length} uploaded (${errors.length} failed)`)
       }
     },
-    [currentDatasetId, mergeAssetMap]
+    [currentDatasetId, uploadAssetMutation]
   )
 
   const handleDrop = useCallback(
@@ -139,11 +139,10 @@ export function AssetDropZone() {
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      clearAssets()
       setState('idle')
       setError(null)
     },
-    [clearAssets]
+    []
   )
 
   const displayState = isAssetsLoaded ? 'loaded' : state

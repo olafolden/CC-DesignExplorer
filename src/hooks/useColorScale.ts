@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import { createColorScale, getColorHex } from '@/lib/colors'
 
 export function useColorScale() {
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
-  const columns = useAppStore((s) => s.columns)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
+  const { data: datasetResponse } = useDataset(currentDatasetId)
+  const columns = datasetResponse?.columns ?? []
 
   return useMemo(() => {
     if (!colorMetricKey) return null
