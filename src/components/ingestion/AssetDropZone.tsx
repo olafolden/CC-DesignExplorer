@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { collectAssetFiles } from '@/lib/file-ingestion'
 import { uploadAsset } from '@/lib/api'
+import { MAX_FILE_SIZE_BYTES } from '@/lib/file-validation'
 import { Button } from '@/components/ui/button'
 
 type DropState = 'idle' | 'hover' | 'uploading' | 'loaded' | 'error'
@@ -34,6 +35,15 @@ export function AssetDropZone() {
       if (files.length === 0) {
         setState('error')
         setError('No image or model files found')
+        return
+      }
+
+      // Client-side size check for fast UX feedback
+      const oversized = files.filter((f) => f.file.size > MAX_FILE_SIZE_BYTES)
+      if (oversized.length > 0) {
+        const limitMB = MAX_FILE_SIZE_BYTES / (1024 * 1024)
+        setState('error')
+        setError(`${oversized.length} file(s) exceed ${limitMB} MB limit: ${oversized[0].name}`)
         return
       }
 
