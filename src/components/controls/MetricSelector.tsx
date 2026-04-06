@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 import {
   Select,
   SelectContent,
@@ -11,10 +12,12 @@ import {
 } from '@/components/ui/select'
 
 export function MetricSelector() {
-  const columns = useAppStore((s) => s.columns)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const setColorMetricKey = useAppStore((s) => s.setColorMetricKey)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+
+  const { data: datasetResponse, isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const columns = datasetResponse?.columns ?? []
 
   const numericCols = columns.filter((c) => c.type === 'number')
   const inputs = numericCols.filter((c) => c.role === 'input')

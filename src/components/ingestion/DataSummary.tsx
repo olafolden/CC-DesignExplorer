@@ -1,10 +1,13 @@
 import { Database, SlidersHorizontal, Target } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
 
 export function DataSummary() {
-  const rawData = useAppStore((s) => s.rawData)
-  const columns = useAppStore((s) => s.columns)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
+
+  const { data: datasetResponse, isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const columns = datasetResponse?.columns ?? []
 
   if (!isDataLoaded) return null
 

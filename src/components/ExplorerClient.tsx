@@ -5,11 +5,18 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
 import { AppShell } from '@/components/layout/AppShell'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { useHydrate } from '@/hooks/useHydrate'
+import { QueryProvider } from '@/providers/QueryProvider'
+import { usePreferences } from '@/hooks/queries/use-preferences'
 
-export default function ExplorerClient() {
+function ExplorerInner() {
   const theme = useAppStore((s) => s.theme)
-  useHydrate()
+  const setTheme = useAppStore((s) => s.setTheme)
+
+  // Hydrate theme from server preferences
+  const { data: prefs } = usePreferences()
+  useEffect(() => {
+    if (prefs?.theme) setTheme(prefs.theme)
+  }, [prefs?.theme, setTheme])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -44,5 +51,13 @@ export default function ExplorerClient() {
         <AppShell />
       </ErrorBoundary>
     </TooltipProvider>
+  )
+}
+
+export default function ExplorerClient() {
+  return (
+    <QueryProvider>
+      <ExplorerInner />
+    </QueryProvider>
   )
 }

@@ -6,10 +6,13 @@ export const createProjectSlice: StateCreator<AppStore, [], [], ProjectSlice> = 
 ) => ({
   currentProjectId: null,
   currentDatasetId: null,
-  projects: [],
-  isHydrating: false,
   setCurrentProjectId: (id) => set({ currentProjectId: id }),
   setCurrentDatasetId: (id) => set({ currentDatasetId: id }),
-  setProjects: (projects) => set({ projects }),
-  setIsHydrating: (v) => set({ isHydrating: v }),
+  resetUIForNewDataset: () =>
+    set({
+      brushRanges: [],
+      colorMetricKey: null,
+      selectedDesignId: null,
+      hoveredDesignId: null,
+    }),
 })

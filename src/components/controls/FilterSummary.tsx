@@ -1,12 +1,16 @@
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
+import { useFilteredDesigns } from '@/hooks/useFilteredDesigns'
 import { Badge } from '@/components/ui/badge'
 
 export function FilterSummary() {
   const brushRanges = useAppStore((s) => s.brushRanges)
-  const filteredIds = useAppStore((s) => s.filteredIds)
-  const rawData = useAppStore((s) => s.rawData)
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const clearFilters = useAppStore((s) => s.clearFilters)
+
+  const { data: datasetResponse, isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const rawData = datasetResponse?.data ?? []
+  const filteredDesigns = useFilteredDesigns()
 
   if (!isDataLoaded || brushRanges.length === 0) return null
 
@@ -14,7 +18,7 @@ export function FilterSummary() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-muted-foreground">
-          {filteredIds.size} / {rawData.length} designs
+          {filteredDesigns.length} / {rawData.length} designs
         </p>
         <button
           onClick={clearFilters}

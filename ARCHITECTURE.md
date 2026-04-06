@@ -11,7 +11,7 @@
 2. [Tech Stack](#tech-stack)
 3. [Folder Structure](#folder-structure)
 4. [Component Hierarchy](#component-hierarchy)
-5. [Zustand Store Design](#zustand-store-design)
+5. [State Management](#state-management)
 6. [Database Schema](#database-schema)
 7. [API Routes](#api-routes)
 8. [Authentication Flow](#authentication-flow)
@@ -54,7 +54,8 @@ Target: Desktop/Monitor aspect ratios only (no mobile/tablet).
 | Styling            | Tailwind CSS v4 (`@tailwindcss/postcss`)            | PostCSS plugin replaces Vite plugin                          |
 | UI Components      | shadcn/ui (New York style, CSS variables)           | Framework-agnostic, copies directly                          |
 | Icons              | Lucide React                                        |                                                              |
-| State Management   | Zustand 5+ (slice pattern, `devtools` middleware)   | Client-side cache, hydrated from server                      |
+| Server State       | TanStack Query (React Query)                        | Caching, deduplication, background refetch for API data      |
+| Client State       | Zustand 5+ (slice pattern, `devtools` middleware)   | UI-only state: selections, view mode, theme, brush ranges    |
 | Charts             | Apache ECharts via `echarts-for-react`              | Dynamic import with `ssr: false`                             |
 | 3D Rendering       | React Three Fiber + drei                            | Dynamic import with `ssr: false`                             |
 | 3D Engine          | Three.js 0.183+                                     |                                                              |
@@ -117,25 +118,38 @@ CC_DesignExplorer/
 │   │       └── middleware.ts              # Supabase auth middleware helper
 │   │
 │   ├── store/
-│   │   ├── index.ts                       # Combined Zustand store
+│   │   ├── index.ts                       # Combined Zustand store (UI state only)
 │   │   ├── types.ts                       # All store type definitions
 │   │   └── slices/
-│   │       ├── data-slice.ts              # rawData, columns, metadata
-│   │       ├── filter-slice.ts            # brushRanges, filteredIds (Set<string>)
+│   │       ├── filter-slice.ts            # brushRanges, setBrushRanges, clearFilters
 │   │       ├── selection-slice.ts         # selectedDesignId, hoveredDesignId
 │   │       ├── view-slice.ts              # viewMode (2d/3d/catalogue), colorMetricKey
-│   │       ├── asset-slice.ts             # assetMap (ID -> server signed URLs)
 │   │       ├── ui-slice.ts               # theme, sidebarCollapsed, panelsSwapped
-│   │       ├── project-slice.ts           # currentProjectId, currentDatasetId
+│   │       ├── project-slice.ts           # currentProjectId, currentDatasetId, resetUIForNewDataset
 │   │       └── viewer-settings-slice.ts   # 3D viewer rendering controls
 │   │
+│   ├── providers/
+│   │   └── QueryProvider.tsx              # TanStack Query client + devtools
+│   │
 │   ├── hooks/
-│   │   ├── useHydrate.ts                  # Load projects, datasets, assets on mount
+│   │   ├── queries/
+│   │   │   ├── keys.ts                    # Query key factory
+│   │   │   ├── use-projects.ts            # Projects list query
+│   │   │   ├── use-project-datasets.ts    # Datasets for a project
+│   │   │   ├── use-dataset.ts             # Single dataset (data + columns)
+│   │   │   ├── use-asset-urls.ts          # Asset signed URLs for a dataset
+│   │   │   └── use-preferences.ts         # User preferences query
+│   │   ├── mutations/
+│   │   │   ├── use-create-project.ts      # Create project + invalidate
+│   │   │   ├── use-delete-project.ts      # Delete project + invalidate
+│   │   │   ├── use-delete-dataset.ts      # Delete dataset + invalidate
+│   │   │   ├── use-upload-dataset.ts      # Upload JSON data + invalidate
+│   │   │   └── use-upload-asset.ts        # Upload asset file + invalidate
 │   │   ├── useTheme.ts                    # Theme read/write + DOM class toggle
-│   │   ├── useFilteredDesigns.ts          # Derived selector: filtered rows
+│   │   ├── useFilteredDesigns.ts          # Derived: filtered rows from RQ data + brush ranges
 │   │   ├── useColorScale.ts              # (value) -> hex color function
 │   │   ├── useObjectUrl.ts               # auto-revoke object URL lifecycle
-│   │   └── useRefreshAssets.ts            # Re-fetch signed URLs on 403
+│   │   └── useRefreshAssets.ts            # Invalidate asset URL query on 403
 │   │
 │   ├── types/
 │   │   ├── design.ts                      # DesignIteration, ColumnMeta interfaces
@@ -223,21 +237,74 @@ ExplorerClient ('use client', hydration, keyboard shortcuts)
 
 ---
 
-## Zustand Store Design
+## State Management
 
-### Store Architecture
+### Architecture: Server State vs Client State
 
-The store uses the **slice pattern** — each domain concern is a separate slice creator function. All slices are combined into a single `useAppStore` hook with `devtools` middleware for debugging.
+State is split into two layers:
+
+- **Server state** (TanStack Query): Data fetched from API — projects, datasets, asset URLs, preferences. Cached, deduplicated, background-refetched.
+- **Client state** (Zustand): UI-only state — selections, brush ranges, view mode, theme, panel layout. Never fetched from server.
+
+```
+┌─────────────────────────────────────────────┐
+│  TanStack Query (server state)              │
+│  ├── useProjects()        → project list    │
+│  ├── useDataset(id)       → data + columns  │
+│  ├── useAssetUrls(id)     → signed URLs     │
+│  ├── usePreferences()     → theme, defaults │
+│  └── useProjectDatasets() → dataset list    │
+├─────────────────────────────────────────────┤
+│  Zustand (client state)                     │
+│  ├── FilterSlice     → brushRanges          │
+│  ├── SelectionSlice  → selectedDesignId     │
+│  ├── ViewSlice       → viewMode, colorKey   │
+│  ├── UISlice         → theme, sidebar       │
+│  ├── ProjectSlice    → currentProjectId     │
+│  └── ViewerSettings  → 3D render controls   │
+└─────────────────────────────────────────────┘
+```
+
+### TanStack Query Setup
+
+`QueryProvider` wraps the app in `ExplorerClient`. Default config: 5min stale time, 30min GC, no refetch on window focus.
+
+Query key factory (`src/hooks/queries/keys.ts`):
+```typescript
+export const queryKeys = {
+  projects: ['projects'],
+  projectDatasets: (projectId) => ['projects', projectId, 'datasets'],
+  dataset: (datasetId) => ['datasets', datasetId],
+  assetUrls: (datasetId) => ['assets', datasetId, 'urls'],
+  preferences: ['preferences'],
+}
+```
+
+Mutations auto-invalidate related queries on success (e.g., `useDeleteDataset` invalidates both `projects` and `datasets` keys).
+
+### Derived State
+
+Filtered designs are **derived** from React Query data + Zustand brush ranges — not stored:
 
 ```typescript
-// src/store/index.ts
+// src/hooks/useFilteredDesigns.ts
+function useFilteredDesigns() {
+  const brushRanges = useAppStore(s => s.brushRanges)
+  const { data } = useDataset(currentDatasetId)
+  return useMemo(() => /* filter rawData by brushRanges */, [data, brushRanges])
+}
+```
+
+### Zustand Store (UI Only)
+
+The store uses the **slice pattern** — each domain concern is a separate slice creator function. All slices are combined into a single `useAppStore` hook with `devtools` middleware.
+
+```typescript
 const useAppStore = create<AppStore>()(
   devtools((...a) => ({
-    ...createDataSlice(...a),
     ...createFilterSlice(...a),
     ...createSelectionSlice(...a),
     ...createViewSlice(...a),
-    ...createAssetSlice(...a),
     ...createUISlice(...a),
     ...createProjectSlice(...a),
     ...createViewerSettingsSlice(...a),
@@ -245,32 +312,11 @@ const useAppStore = create<AppStore>()(
 );
 ```
 
-### Slice Definitions
-
-#### DataSlice
-```typescript
-interface DataSlice {
-  rawData: DesignIteration[];        // Full dataset from server
-  columns: ColumnMeta[];             // Auto-inferred column metadata
-  isDataLoaded: boolean;
-  setRawData(data, columns): void;
-  clearData(): void;
-}
-```
-
 #### FilterSlice
 ```typescript
-interface BrushRange {
-  axisIndex: number;                 // Which parallel axis
-  key: string;                       // Column key
-  range: [number, number];           // [min, max] selected
-}
-
 interface FilterSlice {
   brushRanges: BrushRange[];
-  filteredIds: Set<string>;          // O(1) membership checks
   setBrushRanges(ranges): void;
-  recomputeFilteredIds(): void;      // Cross-reads rawData via get()
   clearFilters(): void;
 }
 ```
@@ -278,8 +324,8 @@ interface FilterSlice {
 #### SelectionSlice
 ```typescript
 interface SelectionSlice {
-  selectedDesignId: string | null;   // Clicked design
-  hoveredDesignId: string | null;    // Mouse-over design
+  selectedDesignId: string | null;
+  hoveredDesignId: string | null;
   setSelectedDesignId(id): void;
   setHoveredDesignId(id): void;
 }
@@ -289,25 +335,9 @@ interface SelectionSlice {
 ```typescript
 interface ViewSlice {
   viewMode: '2d' | '3d' | 'catalogue';
-  colorMetricKey: string | null;     // Column key for color mapping
+  colorMetricKey: string | null;
   setViewMode(mode): void;
   setColorMetricKey(key): void;
-}
-```
-
-#### AssetSlice
-```typescript
-interface AssetEntry {
-  imageUrl: string | null;           // Signed URL for .png/.jpg
-  modelUrl: string | null;           // Signed URL for .glb/.gltf
-}
-
-interface AssetSlice {
-  assetMap: Record<string, AssetEntry>;
-  isAssetsLoaded: boolean;
-  setAssetMap(map): void;
-  mergeAssetMap(partial): void;
-  clearAssets(): void;
 }
 ```
 
@@ -317,11 +347,7 @@ interface UISlice {
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
   panelsSwapped: boolean;
-  setTheme(theme): void;
-  toggleTheme(): void;
-  setSidebarCollapsed(collapsed): void;
-  toggleSidebar(): void;
-  togglePanelSwap(): void;
+  // + setters, toggles
 }
 ```
 
@@ -330,19 +356,16 @@ interface UISlice {
 interface ProjectSlice {
   currentProjectId: string | null;
   currentDatasetId: string | null;
-  projects: ProjectInfo[];
-  isHydrating: boolean;
   setCurrentProjectId(id): void;
   setCurrentDatasetId(id): void;
-  setProjects(projects): void;
-  setIsHydrating(v): void;
+  resetUIForNewDataset(): void;  // Clears brushRanges, selections, colorMetricKey
 }
 ```
 
 #### ViewerSettingsSlice
 ```typescript
 interface ViewerSettingsSlice {
-  viewerSettings: ViewerSettings;    // backgroundColor, lighting, FOV, wireframe, etc.
+  viewerSettings: ViewerSettings;  // backgroundColor, lighting, FOV, wireframe, etc.
   setViewerSettings(partial): void;
   resetViewerSettings(): void;
 }
@@ -467,11 +490,9 @@ middleware.ts checks Supabase session cookie
                          ↓
                      ExplorerClient ('use client')
                          ↓
-                     Load current project/dataset from API
+                     React Query auto-fetches projects/dataset/assets
                          ↓
-                     Hydrate Zustand store
-                         ↓
-                     Explorer UI renders
+                     Explorer UI renders with cached data
 ```
 
 ### Implementation Details
@@ -494,7 +515,7 @@ parseDesignData() → validate → INSERT dataset + bulk INSERT designs
     ↓ response
 Return dataset ID + columns metadata
     ↓ client
-Zustand store hydrated with server response
+useUploadDataset mutation → invalidates dataset queries → React Query refetches
 ```
 
 ### Asset Handling
@@ -504,7 +525,7 @@ Drop folder → traverse entries → POST /api/assets/upload (multipart, paralle
     ↓ server
 Store in Supabase Storage at {user_id}/{dataset_id}/{design_key}.{ext}
     ↓ client
-On design select → GET /api/assets/batch-urls → signed URLs in AssetSlice
+useUploadAsset mutation → invalidates asset URL query → React Query refetches
 ```
 
 - Large GLBs (10-50MB) use Supabase Storage direct-upload (signed upload URL bypasses Vercel's 4.5MB limit)
@@ -513,25 +534,27 @@ On design select → GET /api/assets/batch-urls → signed URLs in AssetSlice
 ### On Page Load (Returning User)
 
 ```
-ExplorerClient mounts
+ExplorerClient mounts → QueryProvider initializes
     ↓
-GET /api/projects → populate ProjectSlice
+useProjects() auto-fetches → cached project list
     ↓
-GET /api/datasets/[currentDatasetId] → setRawData() in DataSlice
+useProjectDatasets(currentProjectId) auto-fetches → dataset list
     ↓
-GET /api/assets/batch-urls → setAssetMap() in AssetSlice
+useDataset(currentDatasetId) auto-fetches → data + columns
     ↓
-Explorer UI renders with persisted data
+useAssetUrls(currentDatasetId) auto-fetches → signed URLs (45min stale time)
+    ↓
+All queries cached — subsequent renders read from cache
 ```
 
-### Brush -> Zustand -> Viewer Sync (Unidirectional)
+### Brush -> Derived State -> Viewer Sync (Unidirectional)
 
 ```
 User brushes axis
   -> axisareaselected event (debounced 50ms via rAF)
   -> store.setBrushRanges(ranges)
-  -> store.recomputeFilteredIds()  [filters rawData, produces Set<string>]
-  -> ParallelCoordinates subscribes to filteredIds -> rebuilds option with opacities
+  -> useFilteredDesigns() recomputes (React Query data + brushRanges)
+  -> ParallelCoordinates rebuilds option with opacities
   -> ViewerPanel subscribes to selectedDesignId -> shows corresponding asset
 ```
 
@@ -650,7 +673,7 @@ Validation runs before the design lookup and storage upload, rejecting invalid f
 - Listen to `'axisareaselected'` via `onEvents` prop on ReactECharts
 - **Debounce** the Zustand update with 50ms `requestAnimationFrame` to avoid excessive re-renders during drag
 - On each event, extract active brush ranges from all axes and push to store
-- Store calls `recomputeFilteredIds()` which produces `Set<string>` of matching IDs
+- `useFilteredDesigns()` derives filtered rows from React Query data + brush ranges via `useMemo`
 
 ### GLB Loading Strategy
 
@@ -669,7 +692,8 @@ Validation runs before the design lookup and storage upload, rejecting invalid f
 | ECharts     | `notMerge={true}`, `lazyUpdate={true}`, `useMemo` on option  |
 | Three.js    | `frameloop="demand"` (no idle 60fps), `dpr={[1,2]}`         |
 | Assets      | Signed URLs from server; blob URLs via `useObjectUrl` hook    |
-| Filtering   | `Set<string>` for O(1) membership, filter runs once in store |
+| Filtering   | Derived via `useMemo` from RQ data + brush ranges            |
+| Server data | TanStack Query: 5min stale, dedup, background refetch        |
 | Re-renders  | Brush events debounced 50ms, chart option memoized           |
 | GLB models  | Lazy load + useGLTF cache, no preloading of 1,000 models     |
 

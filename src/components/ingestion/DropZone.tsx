@@ -2,8 +2,11 @@ import { useCallback, useRef, useState } from 'react'
 import { Upload, Check, AlertCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import { useDataset } from '@/hooks/queries/use-dataset'
+import { useProjects } from '@/hooks/queries/use-projects'
+import { useUploadDataset } from '@/hooks/mutations/use-upload-dataset'
+import { useCreateProject } from '@/hooks/mutations/use-create-project'
 import { parseDesignData } from '@/lib/file-ingestion'
-import { uploadDataset, createProject, fetchProjects } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 
 type DropState = 'idle' | 'hover' | 'loaded' | 'uploading' | 'error'
@@ -14,12 +17,16 @@ export function DropZone() {
   const [fileName, setFileName] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const isDataLoaded = useAppStore((s) => s.isDataLoaded)
-  const setRawData = useAppStore((s) => s.setRawData)
-  const clearData = useAppStore((s) => s.clearData)
+  const currentDatasetId = useAppStore((s) => s.currentDatasetId)
+  const resetUIForNewDataset = useAppStore((s) => s.resetUIForNewDataset)
   const setCurrentProjectId = useAppStore((s) => s.setCurrentProjectId)
   const setCurrentDatasetId = useAppStore((s) => s.setCurrentDatasetId)
   const currentProjectId = useAppStore((s) => s.currentProjectId)
+
+  const { isSuccess: isDataLoaded } = useDataset(currentDatasetId)
+  const { data: projects } = useProjects()
+  const uploadDatasetMutation = useUploadDataset()
+  const createProjectMutation = useCreateProject()
 
   const processFile = useCallback(
     async (file: File) => {
@@ -33,30 +40,30 @@ export function DropZone() {
         const text = await file.text()
 
         // Validate locally first (fast feedback)
-        const { data, columns } = parseDesignData(text)
+        parseDesignData(text)
 
         setState('uploading')
 
         // Ensure we have a project
         let projectId = currentProjectId
         if (!projectId) {
-          // Auto-create a default project or use existing
-          const projects = await fetchProjects()
-          if (projects.length > 0) {
+          if (projects && projects.length > 0) {
             projectId = projects[0].id
           } else {
-            const project = await createProject('My Project')
+            const project = await createProjectMutation.mutateAsync('My Project')
             projectId = project.id
           }
           setCurrentProjectId(projectId)
         }
 
         // Upload to server
-        const result = await uploadDataset(projectId, text, file.name)
+        const result = await uploadDatasetMutation.mutateAsync({
+          projectId,
+          jsonString: text,
+          fileName: file.name,
+        })
         setCurrentDatasetId(result.id)
 
-        // Set local state from the parsed data (already validated)
-        setRawData(data, columns)
         setFileName(file.name)
         setState('loaded')
         setError(null)
@@ -65,7 +72,7 @@ export function DropZone() {
         setError(e instanceof Error ? e.message : 'Failed to upload data')
       }
     },
-    [setRawData, currentProjectId, setCurrentProjectId, setCurrentDatasetId]
+    [currentProjectId, projects, setCurrentProjectId, setCurrentDatasetId, uploadDatasetMutation, createProjectMutation]
   )
 
   const handleDrop = useCallback(
@@ -106,12 +113,13 @@ export function DropZone() {
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      clearData()
+      resetUIForNewDataset()
+      setCurrentDatasetId(null)
       setState('idle')
       setFileName(null)
       setError(null)
     },
-    [clearData]
+    [resetUIForNewDataset, setCurrentDatasetId]
   )
 
   const displayState = isDataLoaded ? 'loaded' : state
