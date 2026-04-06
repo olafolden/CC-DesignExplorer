@@ -63,9 +63,27 @@ export interface ViewerSettingsSlice {
   resetViewerSettings: () => void
 }
 
+export interface ParameterSettings {
+  isVisible: boolean
+  customMin: number | null
+  customMax: number | null
+  stepCount: number
+}
+
+export type ParameterSettingsMap = Record<string, ParameterSettings>
+
+export interface ParameterSettingsSlice {
+  parameterSettings: ParameterSettingsMap
+  setParameterVisible: (key: string, visible: boolean) => void
+  setParameterBounds: (key: string, min: number | null, max: number | null) => void
+  setParameterStepCount: (key: string, count: number) => void
+  resetParameterSettings: () => void
+}
+
 export type AppStore = FilterSlice &
   SelectionSlice &
   ViewSlice &
   UISlice &
   ProjectSlice &
-  ViewerSettingsSlice
+  ViewerSettingsSlice &
+  ParameterSettingsSlice
