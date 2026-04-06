@@ -4,6 +4,16 @@
 
 ## v2: Next.js Migration
 
+### Test Infrastructure (2026-04-06)
+- Vitest + React Testing Library + Playwright installed and configured
+- Unit tests for `parseDesignData` (17 tests): flat/wrapped formats, auto-ID, column inference, sorting, error handling, real data.json validation
+- Unit tests for `getColorHex` and `createColorScale` (8 tests): boundary values, clamping, grey fallback
+- Zustand store tests for FilterSlice (5 tests): recomputeFilteredIds, brush range filtering (AND logic), clearFilters
+- Zustand store tests for DataSlice (6 tests): setRawData, auto colorMetricKey, reset side effects, clearData
+- Playwright smoke test for login page
+- npm scripts: test, test:watch, test:coverage, test:e2e
+- ARCHITECTURE.md updated with Testing section
+
 ### Phase 5 — Polish (2026-03-30)
 - Loading skeleton: shows spinner + skeleton bars in chart/viewer area during hydration
 - Signed URL expiration: useRefreshAssets hook auto-re-fetches asset URLs on image 403 errors

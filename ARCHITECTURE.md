@@ -18,10 +18,11 @@
 9. [Data Flow](#data-flow)
 10. [SSR & Dynamic Imports](#ssr--dynamic-imports)
 11. [Color Mapping Strategy](#color-mapping-strategy)
-12. [Key Technical Decisions](#key-technical-decisions)
-13. [Performance Considerations](#performance-considerations)
-14. [Hosting & Deployment](#hosting--deployment)
-15. [Verification Checklist](#verification-checklist)
+12. [Testing](#testing)
+13. [Key Technical Decisions](#key-technical-decisions)
+14. [Performance Considerations](#performance-considerations)
+15. [Hosting & Deployment](#hosting--deployment)
+16. [Verification Checklist](#verification-checklist)
 
 ---
 
@@ -587,6 +588,39 @@ function getColorHex(value: number, min: number, max: number): string {
 | ParallelCoordinates   | `lineStyle.color` per data row in ECharts option         |
 | DesignModel (3D)      | `scene.traverse()` -> `mesh.material.color.set(hex)`    |
 | DesignInfo card       | Colored Badge on the metric value                        |
+
+---
+
+## Testing
+
+### Stack
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| Vitest | Unit & integration tests | `vitest.config.ts` — node env by default, jsdom for component tests |
+| React Testing Library | Component rendering tests | `vitest.setup.ts` — jest-dom matchers |
+| Playwright | E2E browser tests | `playwright.config.ts` — chromium, localhost:3000 |
+
+### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm test` | Run all unit/integration tests once |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run test:e2e` | Run Playwright E2E tests |
+
+### Test Organization
+
+- `src/lib/__tests__/` — pure utility tests (file-ingestion, colors)
+- `src/store/__tests__/` — Zustand store slice tests
+- `e2e/` — Playwright end-to-end tests
+
+### Conventions
+
+- **TDD**: Write failing tests before implementation
+- **Store tests**: Use the real `useAppStore` (not mocked) — call `useAppStore.getState()` and `useAppStore.setState()` directly
+- **Environment**: Use `node` for pure logic tests, `jsdom` only when testing DOM/React components (via `*.component.test.tsx` naming or `@vitest-environment jsdom` comment)
 
 ---
 
