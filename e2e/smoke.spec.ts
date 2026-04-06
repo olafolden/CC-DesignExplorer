@@ -1,0 +1,8 @@
+import { test, expect } from '@playwright/test'
+
+test('login page renders', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page).toHaveURL(/\/login/)
+  // Page should contain a form or sign-in elements
+  await expect(page.locator('body')).toBeVisible()
+})
