@@ -14,5 +14,6 @@ export const createProjectSlice: StateCreator<AppStore, [], [], ProjectSlice> = 
       colorMetricKey: null,
       selectedDesignId: null,
       hoveredDesignId: null,
+      parameterSettings: {},
     }),
 })

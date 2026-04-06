@@ -56,4 +56,13 @@ describe('FilterSlice', () => {
     expect(state.hoveredDesignId).toBeNull()
     expect(state.colorMetricKey).toBeNull()
   })
+
+  it('resetUIForNewDataset clears parameterSettings', () => {
+    useAppStore.getState().setParameterVisible('x', false)
+    useAppStore.getState().setParameterBounds('y', 10, 50)
+
+    useAppStore.getState().resetUIForNewDataset()
+
+    expect(useAppStore.getState().parameterSettings).toEqual({})
+  })
 })
