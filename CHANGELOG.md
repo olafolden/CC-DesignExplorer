@@ -4,6 +4,13 @@
 
 ## v2: Next.js Migration
 
+### Secure File Uploads (2026-04-06)
+- File validation utility (src/lib/file-validation.ts): extension whitelist, 50MB size limit, magic byte verification for PNG/JPEG/WebP/GLB/GLTF
+- Upload API route hardened: validates extension, size, and content before design lookup or storage upload
+- Client-side size check in AssetDropZone for immediate UX feedback before upload
+- 31 unit tests for all validation functions and edge cases
+- ARCHITECTURE.md updated with Upload Validation Pipeline section
+
 ### Test Infrastructure (2026-04-06)
 - Vitest + React Testing Library + Playwright installed and configured
 - Unit tests for `parseDesignData` (17 tests): flat/wrapped formats, auto-ID, column inference, sorting, error handling, real data.json validation

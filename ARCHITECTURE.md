@@ -630,6 +630,21 @@ function getColorHex(value: number, min: number, max: number): string {
 
 **Filename-to-ID mapping**: Filename stem (without extension) must match the design ID. E.g., `design_42.glb` → ID `"design_42"`.
 
+### Upload Validation Pipeline
+
+All file uploads go through `POST /api/assets/upload` with a three-stage server-side validation (`src/lib/file-validation.ts`):
+
+1. **Extension whitelist**: Only `.png`, `.jpg`, `.jpeg`, `.webp`, `.glb`, `.gltf` accepted
+2. **Size limit**: 50 MB max (`MAX_FILE_SIZE_BYTES`). Client-side pre-check in AssetDropZone for fast UX feedback
+3. **Magic byte verification**: Validates file content matches declared extension
+   - PNG: `89 50 4E 47` header
+   - JPEG: `FF D8 FF` header
+   - WebP: `RIFF` + `WEBP` at bytes 8-11
+   - GLB: `glTF` magic bytes
+   - GLTF: Valid JSON with `asset` field
+
+Validation runs before the design lookup and storage upload, rejecting invalid files early.
+
 ### ECharts Brush Event Handling
 
 - Listen to `'axisareaselected'` via `onEvents` prop on ReactECharts
