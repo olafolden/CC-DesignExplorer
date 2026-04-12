@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Upload, Check, AlertCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
@@ -7,6 +8,7 @@ import { useProjects } from '@/hooks/queries/use-projects'
 import { useUploadDataset } from '@/hooks/mutations/use-upload-dataset'
 import { useCreateProject } from '@/hooks/mutations/use-create-project'
 import { parseDesignData } from '@/lib/file-ingestion'
+import { queryKeys } from '@/hooks/queries/keys'
 import { Button } from '@/components/ui/button'
 
 type DropState = 'idle' | 'hover' | 'loaded' | 'uploading' | 'error'
@@ -17,6 +19,7 @@ export function DropZone() {
   const [fileName, setFileName] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const queryClient = useQueryClient()
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const resetUIForNewDataset = useAppStore((s) => s.resetUIForNewDataset)
   const setCurrentProjectId = useAppStore((s) => s.setCurrentProjectId)
@@ -113,13 +116,17 @@ export function DropZone() {
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
+      if (currentDatasetId) {
+        queryClient.removeQueries({ queryKey: queryKeys.dataset(currentDatasetId) })
+        queryClient.removeQueries({ queryKey: queryKeys.assetUrls(currentDatasetId) })
+      }
       resetUIForNewDataset()
       setCurrentDatasetId(null)
       setState('idle')
       setFileName(null)
       setError(null)
     },
-    [resetUIForNewDataset, setCurrentDatasetId]
+    [currentDatasetId, queryClient, resetUIForNewDataset, setCurrentDatasetId]
   )
 
   const displayState = isDataLoaded ? 'loaded' : state

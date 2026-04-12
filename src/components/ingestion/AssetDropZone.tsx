@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { FolderOpen, Check, AlertCircle, X, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
@@ -6,6 +7,7 @@ import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useUploadAsset } from '@/hooks/mutations/use-upload-asset'
 import { collectAssetFiles } from '@/lib/file-ingestion'
 import { MAX_FILE_SIZE_BYTES } from '@/lib/file-validation'
+import { queryKeys } from '@/hooks/queries/keys'
 import { Button } from '@/components/ui/button'
 
 type DropState = 'idle' | 'hover' | 'uploading' | 'loaded' | 'error'
@@ -16,6 +18,7 @@ export function AssetDropZone() {
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const queryClient = useQueryClient()
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
 
   const { data: assetMap = {}, isSuccess: hasAssets } = useAssetUrls(currentDatasetId)
@@ -139,10 +142,13 @@ export function AssetDropZone() {
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
+      if (currentDatasetId) {
+        queryClient.removeQueries({ queryKey: queryKeys.assetUrls(currentDatasetId) })
+      }
       setState('idle')
       setError(null)
     },
-    []
+    [currentDatasetId, queryClient]
   )
 
   const displayState = isAssetsLoaded ? 'loaded' : state

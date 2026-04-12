@@ -7,7 +7,9 @@ export function useDeleteDataset() {
 
   return useMutation({
     mutationFn: (id: string) => deleteDataset(id),
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
+      queryClient.removeQueries({ queryKey: queryKeys.dataset(deletedId) })
+      queryClient.removeQueries({ queryKey: queryKeys.assetUrls(deletedId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.projects })
       queryClient.invalidateQueries({ queryKey: ['datasets'] })
     },
