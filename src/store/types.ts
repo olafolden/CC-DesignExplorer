@@ -57,10 +57,20 @@ export interface ViewerSettings {
   doubleSided: boolean
 }
 
+export interface ViewerProfile {
+  id: string
+  name: string
+  settings: ViewerSettings
+}
+
 export interface ViewerSettingsSlice {
   viewerSettings: ViewerSettings
+  viewerProfiles: ViewerProfile[]
   setViewerSettings: (partial: Partial<ViewerSettings>) => void
   resetViewerSettings: () => void
+  saveProfile: (name: string) => void
+  loadProfile: (id: string) => void
+  deleteProfile: (id: string) => void
 }
 
 export interface ParameterSettings {
