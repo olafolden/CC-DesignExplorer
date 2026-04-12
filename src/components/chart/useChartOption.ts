@@ -12,6 +12,7 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
+  const parameterSettings = useAppStore((s) => s.parameterSettings)
 
   const { data: datasetResponse } = useDataset(currentDatasetId)
   const rawData = datasetResponse?.data ?? []
@@ -23,41 +24,50 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
     const numericCols = columns.filter((c) => c.type === 'number')
     if (numericCols.length === 0) return null
 
+    const visibleCols = numericCols.filter(
+      (c) => parameterSettings[c.key]?.isVisible !== false
+    )
+    if (visibleCols.length === 0) return null
+
     // Find color metric column for value-based coloring
     const colorCol = colorMetricKey
-      ? numericCols.find((c) => c.key === colorMetricKey)
+      ? visibleCols.find((c) => c.key === colorMetricKey)
       : null
 
     const textColor = theme === 'dark' ? '#94a3b8' : '#64748b'
 
     // Find the index where outputs start (for the visual separator)
-    const firstOutputIdx = numericCols.findIndex((c) => c.role === 'output')
+    const firstOutputIdx = visibleCols.findIndex((c) => c.role === 'output')
 
-    const parallelAxis = numericCols.map((col, i) => ({
-      dim: i,
-      name: col.label,
-      min: col.min,
-      max: col.max,
-      nameTextStyle: {
-        color: col.role === 'output' ? OUTPUT_AXIS_COLOR : INPUT_AXIS_COLOR,
-        fontSize: 11,
-        fontWeight: 'bold' as const,
-      },
-      axisLine: {
-        lineStyle: {
-          color: col.role === 'output'
-            ? 'rgba(251,191,36,0.35)'
-            : 'rgba(56,189,248,0.35)',
+    const parallelAxis = visibleCols.map((col, i) => {
+      const settings = parameterSettings[col.key]
+      return {
+        dim: i,
+        name: col.label,
+        min: settings?.customMin ?? col.min,
+        max: settings?.customMax ?? col.max,
+        splitNumber: settings?.stepCount ?? 5,
+        nameTextStyle: {
+          color: col.role === 'output' ? OUTPUT_AXIS_COLOR : INPUT_AXIS_COLOR,
+          fontSize: 11,
+          fontWeight: 'bold' as const,
         },
-      },
-      axisLabel: {
-        color: textColor,
-        fontSize: 10,
-      },
-    }))
+        axisLine: {
+          lineStyle: {
+            color: col.role === 'output'
+              ? 'rgba(251,191,36,0.35)'
+              : 'rgba(56,189,248,0.35)',
+          },
+        },
+        axisLabel: {
+          color: textColor,
+          fontSize: 10,
+        },
+      }
+    })
 
     const seriesData = rawData.map((row) => {
-      const values = numericCols.map((col) => row[col.key] as number)
+      const values = visibleCols.map((col) => row[col.key] as number)
 
       let lineColor: string
       if (colorCol && colorCol.min != null && colorCol.max != null) {
@@ -92,7 +102,7 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
             },
             {
               type: 'text' as const,
-              left: `${((firstOutputIdx - 0.5) / (numericCols.length - 1)) * 100}%`,
+              left: `${((firstOutputIdx - 0.5) / (visibleCols.length - 1)) * 100}%`,
               top: 8,
               style: {
                 text: '|',
@@ -142,7 +152,7 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
               const idx = rawData.findIndex((d) => d.id === selectedDesignId)
               if (idx < 0) return []
               const row = rawData[idx]
-              const values = numericCols.map((col) => row[col.key] as number)
+              const values = visibleCols.map((col) => row[col.key] as number)
               const highlightColor = theme === 'dark' ? '#ffffff' : '#0f172a'
               return [
                 {
@@ -172,5 +182,5 @@ export function useChartOption(theme: 'light' | 'dark'): EChartsOption | null {
     }
 
     return option
-  }, [rawData, columns, colorMetricKey, selectedDesignId, theme])
+  }, [rawData, columns, colorMetricKey, selectedDesignId, theme, parameterSettings])
 }
