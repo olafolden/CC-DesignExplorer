@@ -4,6 +4,33 @@
 
 ## v2: Next.js Migration
 
+### Viewer Settings Profiles (2026-04-12)
+- Updated default viewer settings: directional=2.0, exposure=3.0, grid=off
+- Profile system: save, load, and delete named viewer settings snapshots
+- Profiles persisted to localStorage (`design-explorer:viewer-profiles`)
+- Collapsible "Profiles" section added to ViewerSettingsPanel with Select dropdown, save input, and delete button
+- 12 unit tests for defaults, save/load/delete, and localStorage persistence
+- ARCHITECTURE.md updated with ViewerSettingsSlice profiles and ParameterSettingsSlice docs
+
+### Data Unload & Deletion Bug Fix (2026-04-12)
+- Fixed: DropZone X button didn't visually unload data (React Query cache stayed `isSuccess: true`)
+- Fixed: AssetDropZone X button didn't visually unload assets (same cache issue)
+- Fixed: "Delete current dataset" didn't reset drop zones (stale cache entries persisted)
+- Root cause: `removeQueries` now used to clear specific dataset/asset cache entries on unload/delete
+- `useDeleteDataset` mutation `onSuccess` now removes dataset + asset URL cache entries
+- 5 unit tests for cache cleanup logic
+
+### Parameter Controls & Data Settings Hub (2026-04-06)
+- New Zustand slice (`ParameterSettingsSlice`): per-parameter `isVisible`, `customMin`, `customMax`, `stepCount`
+- DataSettingsMenu: gear-icon popover overlaid on chart panel (Settings2 from lucide)
+  - Summary header: design count, input count, output count
+  - Parameter rows grouped by role (Inputs/Outputs) with Switch toggle, min/max number inputs, step count input
+  - "Reset all" button to clear overrides
+- useChartOption: filters axes by visibility, applies custom bounds/splitNumber, re-indexes data arrays
+- useChartEvents: aligned brush events with visible-only axis indices
+- Cleared by `resetUIForNewDataset()` on dataset switch
+- 8 unit tests for slice actions, defaults, and reset behavior
+
 ### Granular SSR Optimization (2026-04-06)
 - Removed `ssr: false` dynamic import from app/(app)/page.tsx — ExplorerClient now SSR'd
 - Next.js renders full app shell HTML on server (sidebar, layout, empty states) with Zustand defaults

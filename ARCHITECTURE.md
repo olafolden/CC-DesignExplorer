@@ -127,7 +127,8 @@ CC_DesignExplorer/
 │   │       ├── view-slice.ts              # viewMode (2d/3d/catalogue), colorMetricKey
 │   │       ├── ui-slice.ts               # theme, sidebarCollapsed, panelsSwapped
 │   │       ├── project-slice.ts           # currentProjectId, currentDatasetId, resetUIForNewDataset
-│   │       └── viewer-settings-slice.ts   # 3D viewer rendering controls
+│   │       ├── viewer-settings-slice.ts   # 3D viewer rendering controls + profiles (localStorage)
+│   │       └── parameter-settings-slice.ts # Per-axis visibility, bounds, step count
 │   │
 │   ├── providers/
 │   │   └── QueryProvider.tsx              # TanStack Query client + devtools
@@ -188,6 +189,7 @@ CC_DesignExplorer/
 │       └── controls/
 │           ├── ProjectSelector.tsx         # Project dropdown + create/delete
 │           ├── MetricSelector.tsx         # Color metric dropdown
+│           ├── DataSettingsMenu.tsx       # Gear-icon popover: parameter visibility, bounds, steps
 │           ├── DesignInfo.tsx             # Selected design parameter card
 │           ├── DesignSelector.tsx         # Searchable design ID picker
 │           └── FilterSummary.tsx          # Active brush ranges as chips
@@ -257,12 +259,16 @@ State is split into two layers:
 │  └── useProjectDatasets() → dataset list    │
 ├─────────────────────────────────────────────┤
 │  Zustand (client state)                     │
-│  ├── FilterSlice     → brushRanges          │
-│  ├── SelectionSlice  → selectedDesignId     │
-│  ├── ViewSlice       → viewMode, colorKey   │
-│  ├── UISlice         → theme, sidebar       │
-│  ├── ProjectSlice    → currentProjectId     │
-│  └── ViewerSettings  → 3D render controls   │
+│  ├── FilterSlice          → brushRanges     │
+│  ├── SelectionSlice       → selectedDesignId│
+│  ├── ViewSlice            → viewMode, color │
+│  ├── UISlice              → theme, sidebar  │
+│  ├── ProjectSlice         → currentProjectId│
+│  ├── ViewerSettingsSlice  → 3D controls +   │
+│  │                          profiles (localStorage)│
+│  └── ParameterSettingsSlice → per-axis      │
+│                               visibility,   │
+│                               bounds, steps │
 └─────────────────────────────────────────────┘
 ```
 
@@ -309,6 +315,7 @@ const useAppStore = create<AppStore>()(
     ...createUISlice(...a),
     ...createProjectSlice(...a),
     ...createViewerSettingsSlice(...a),
+    ...createParameterSettingsSlice(...a),
   }))
 );
 ```
@@ -367,10 +374,29 @@ interface ProjectSlice {
 ```typescript
 interface ViewerSettingsSlice {
   viewerSettings: ViewerSettings;  // backgroundColor, lighting, FOV, wireframe, etc.
+  viewerProfiles: ViewerProfile[]; // Named settings snapshots (localStorage-persisted)
   setViewerSettings(partial): void;
   resetViewerSettings(): void;
+  saveProfile(name): void;         // Snapshot current settings as named profile
+  loadProfile(id): void;           // Apply a saved profile
+  deleteProfile(id): void;         // Remove a saved profile
 }
 ```
+
+Default settings: directional=2.0, exposure=3.0, grid=off. Profiles stored in `localStorage` under key `design-explorer:viewer-profiles`.
+
+#### ParameterSettingsSlice
+```typescript
+interface ParameterSettingsSlice {
+  parameterSettings: Record<string, ParameterSettings>; // Keyed by ColumnMeta.key
+  setParameterVisible(key, visible): void;  // Toggle axis visibility
+  setParameterBounds(key, min, max): void;  // Override axis bounds (null = data-derived)
+  setParameterStepCount(key, count): void;  // Set axis tick count (splitNumber)
+  resetParameterSettings(): void;           // Clear all overrides
+}
+```
+
+Controls per-parameter visibility, bounds, and step count on the Parallel Coordinates chart. Cleared by `resetUIForNewDataset()` on dataset switch.
 
 ### Selector Usage Rule
 
