@@ -11,7 +11,14 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from '@/components/ui/collapsible'
-import { ChevronDown, RotateCcw } from 'lucide-react'
+import { ChevronDown, RotateCcw, Plus, Trash2 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -98,6 +105,102 @@ function SwitchRow({
   )
 }
 
+function ProfileSection() {
+  const profiles = useAppStore((s) => s.viewerProfiles)
+  const saveProfile = useAppStore((s) => s.saveProfile)
+  const loadProfile = useAppStore((s) => s.loadProfile)
+  const deleteProfile = useAppStore((s) => s.deleteProfile)
+
+  const [isCreating, setIsCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
+
+  const handleSave = () => {
+    const name = newName.trim()
+    if (!name) return
+    saveProfile(name)
+    setNewName('')
+    setIsCreating(false)
+  }
+
+  const handleLoad = (id: string) => {
+    setSelectedProfileId(id)
+    loadProfile(id)
+  }
+
+  const handleDelete = () => {
+    if (!selectedProfileId) return
+    deleteProfile(selectedProfileId)
+    setSelectedProfileId(null)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        <Select
+          value={selectedProfileId ?? ''}
+          onValueChange={handleLoad}
+        >
+          <SelectTrigger className="h-7 text-xs flex-1">
+            <SelectValue placeholder="Load profile..." />
+          </SelectTrigger>
+          <SelectContent>
+            {profiles.map((p) => (
+              <SelectItem key={p.id} value={p.id} className="text-xs">
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={() => setIsCreating(!isCreating)}
+          title="Save current settings as profile"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={handleDelete}
+          disabled={!selectedProfileId}
+          title="Delete selected profile"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      {isCreating && (
+        <div className="flex gap-1">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            placeholder="Profile name"
+            className="flex-1 h-7 rounded-md border border-border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+            autoFocus
+          />
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={handleSave}
+            disabled={!newName.trim()}
+          >
+            Save
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ViewerSettingsPanel({
   onResetCamera,
 }: {
@@ -109,6 +212,13 @@ export function ViewerSettingsPanel({
 
   return (
     <div className="space-y-1 max-h-[70vh] overflow-y-auto pr-1">
+      {/* Profiles */}
+      <Section title="Profiles" defaultOpen={false}>
+        <ProfileSection />
+      </Section>
+
+      <Separator />
+
       {/* Scene */}
       <Section title="Scene">
         <div className="space-y-1.5">
