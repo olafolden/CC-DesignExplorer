@@ -9,6 +9,8 @@ export function useChartEvents() {
   const setBrushRanges = useAppStore((s) => s.setBrushRanges)
   const setSelectedDesignId = useAppStore((s) => s.setSelectedDesignId)
 
+  const parameterSettings = useAppStore((s) => s.parameterSettings)
+
   const { data: datasetResponse } = useDataset(currentDatasetId)
   const rawData = datasetResponse?.data ?? []
   const columns = datasetResponse?.columns ?? []
@@ -16,6 +18,9 @@ export function useChartEvents() {
   const rafId = useRef<number>(0)
 
   const numericCols = columns.filter((c) => c.type === 'number')
+  const visibleCols = numericCols.filter(
+    (c) => parameterSettings[c.key]?.isVisible !== false
+  )
 
   const handleAxisAreaSelected = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +35,7 @@ export function useChartEvents() {
         const parallelAxes = opt.parallelAxis || []
 
         for (let i = 0; i < parallelAxes.length; i++) {
-          const col = numericCols[i]
+          const col = visibleCols[i]
           if (!col) continue
 
           // Get the axis model to read activeIntervals
@@ -50,7 +55,7 @@ export function useChartEvents() {
         setBrushRanges(ranges)
       })
     },
-    [numericCols, setBrushRanges]
+    [visibleCols, setBrushRanges]
   )
 
   const handleClick = useCallback(
