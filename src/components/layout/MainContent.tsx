@@ -9,6 +9,7 @@ import { useProjects } from '@/hooks/queries/use-projects'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ResizeHandle } from './ResizeHandle'
 import { ViewerPanel } from '@/components/viewer/ViewerPanel'
+import { DataSettingsMenu } from '@/components/controls/DataSettingsMenu'
 
 const ParallelCoordinates = dynamic(
   () => import('@/components/chart/ParallelCoordinates'),
@@ -84,9 +85,14 @@ export function MainContent() {
   const chartPanel = (
     <div
       key="chart"
-      className="overflow-hidden border-t border-border bg-card"
+      className="relative overflow-hidden border-t border-border bg-card"
       style={{ flex: `${panelsSwapped ? 1 - chartRatio : chartRatio} 1 0%` }}
     >
+      {isDataLoaded && (
+        <div className="absolute top-2 right-2 z-10">
+          <DataSettingsMenu />
+        </div>
+      )}
       {isHydrating ? <HydrationSkeleton /> : isDataLoaded ? <ParallelCoordinates /> : <ChartEmpty />}
     </div>
   )
