@@ -57,6 +57,8 @@ export interface ViewerSettings {
   wireframe: boolean
   opacity: number
   doubleSided: boolean
+  environmentPreset: 'none' | 'studio' | 'overcast' | 'urban'
+  environmentIntensity: number
 }
 
 export interface ViewerProfile {

@@ -14,6 +14,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
@@ -44,6 +45,16 @@ let currentSettings = null;
 
 // Model preload cache: url -> ArrayBuffer
 const modelCache = new Map();
+
+// HDRI environment
+const hdriPaths = {
+  studio: '/hdri/studio_small.hdr',
+  overcast: '/hdri/kloofendal_overcast.hdr',
+  urban: '/hdri/potsdamer_platz.hdr',
+};
+const envCache = new Map();
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+let currentEnvPreset = 'none';
 
 // Store default camera position for reset
 let defaultCameraPos = new THREE.Vector3(0, 3, 3);
@@ -134,6 +145,35 @@ function applyMaterialSettings(model, settings) {
   });
 }
 
+function applyEnvironment(preset, intensity) {
+  if (preset === 'none') {
+    scene.environment = null;
+    currentEnvPreset = 'none';
+    return;
+  }
+
+  const apply = (envMap) => {
+    scene.environment = envMap;
+    scene.environmentIntensity = intensity;
+    currentEnvPreset = preset;
+  };
+
+  if (envCache.has(preset)) {
+    apply(envCache.get(preset));
+    return;
+  }
+
+  const path = hdriPaths[preset];
+  if (!path) return;
+
+  new RGBELoader().load(path, (hdrTexture) => {
+    const envMap = pmremGenerator.fromEquirectangular(hdrTexture).texture;
+    hdrTexture.dispose();
+    envCache.set(preset, envMap);
+    apply(envMap);
+  });
+}
+
 function applySettings(settings) {
   if (!settings) return;
   currentSettings = settings;
@@ -148,6 +188,14 @@ function applySettings(settings) {
   ambientLight.intensity = settings.ambientIntensity;
   dirLight.intensity = settings.directionalIntensity;
   renderer.toneMappingExposure = settings.exposure;
+
+  // Environment (HDRI)
+  const envPreset = settings.environmentPreset || 'none';
+  const envIntensity = settings.environmentIntensity ?? 1.0;
+  applyEnvironment(envPreset, envIntensity);
+  if (scene.environment) {
+    scene.environmentIntensity = envIntensity;
+  }
 
   // Camera
   controls.autoRotate = settings.autoRotate;
