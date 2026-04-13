@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!assets || assets.length === 0) {
-    return NextResponse.json({})
+    return NextResponse.json({ assets: {}, contextModelUrl: null, contextModelUrls: null })
   }
 
   // Build assetMap keyed by design_key, with modelUrls grouped by category
