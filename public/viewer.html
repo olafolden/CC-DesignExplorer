@@ -84,7 +84,7 @@ function applySettings(settings) {
   }
 }
 
-function loadModel(url) {
+function loadModel(url, preserveCamera) {
   if (currentModel) { scene.remove(currentModel); currentModel = null; }
   if (!url) return;
 
@@ -119,16 +119,18 @@ function loadModel(url) {
         scene.add(group);
         currentModel = group;
 
-        const ss = size.clone().multiplyScalar(s);
-        const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
-        controls.target.set(0, 0, 0);
-        if (isFlat) {
-          camera.position.set(0, 4, 0.5);
-        } else {
-          camera.position.set(0, 1.5, 3);
+        if (!preserveCamera) {
+          const ss = size.clone().multiplyScalar(s);
+          const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
+          controls.target.set(0, 0, 0);
+          if (isFlat) {
+            camera.position.set(0, 4, 0.5);
+          } else {
+            camera.position.set(0, 1.5, 3);
+          }
+          defaultCameraPos.copy(camera.position);
+          defaultTarget.copy(controls.target);
         }
-        defaultCameraPos.copy(camera.position);
-        defaultTarget.copy(controls.target);
         controls.update();
 
         // Re-apply material settings after model load
@@ -143,7 +145,7 @@ function loadModel(url) {
 // Listen for messages from parent React app
 window.addEventListener('message', (e) => {
   if (e.data?.type === 'loadModel') {
-    loadModel(e.data.url);
+    loadModel(e.data.url, e.data.preserveCamera ?? false);
   } else if (e.data?.type === 'updateSettings') {
     applySettings(e.data.settings);
   } else if (e.data?.type === 'resetCamera') {

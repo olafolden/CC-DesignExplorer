@@ -12,6 +12,7 @@ export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const viewerReady = useRef(false)
   const pendingUrl = useRef<string | null>(null)
+  const hasLoadedFirst = useRef(false)
   const viewerSettings = useAppStore((s) => s.viewerSettings)
 
   const postToViewer = useCallback((msg: Record<string, unknown>) => {
@@ -23,11 +24,13 @@ export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
     function onMessage(e: MessageEvent) {
       if (e.data?.type === 'viewerReady') {
         viewerReady.current = true
+        hasLoadedFirst.current = false
         // Send current settings immediately
         postToViewer({ type: 'updateSettings', settings: viewerSettings })
         // Send any pending URL
         if (pendingUrl.current !== null) {
-          postToViewer({ type: 'loadModel', url: pendingUrl.current })
+          postToViewer({ type: 'loadModel', url: pendingUrl.current, preserveCamera: false })
+          if (pendingUrl.current) hasLoadedFirst.current = true
           pendingUrl.current = null
         }
       }
@@ -40,7 +43,8 @@ export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
   useEffect(() => {
     const url = modelUrl || ''
     if (viewerReady.current) {
-      postToViewer({ type: 'loadModel', url })
+      postToViewer({ type: 'loadModel', url, preserveCamera: hasLoadedFirst.current })
+      if (url) hasLoadedFirst.current = true
     } else {
       pendingUrl.current = url
     }
