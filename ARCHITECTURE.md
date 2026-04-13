@@ -57,8 +57,8 @@ Target: Desktop/Monitor aspect ratios only (no mobile/tablet).
 | Server State       | TanStack Query (React Query)                        | Caching, deduplication, background refetch for API data      |
 | Client State       | Zustand 5+ (slice pattern, `devtools` middleware)   | UI-only state: selections, view mode, theme, brush ranges    |
 | Charts             | Apache ECharts via `echarts-for-react`              | Dynamic import with `ssr: false`                             |
-| 3D Rendering       | React Three Fiber + drei                            | Dynamic import with `ssr: false`                             |
-| 3D Engine          | Three.js 0.183+                                     |                                                              |
+| 3D Rendering       | Three.js 0.170 (vanilla, iframe)                    | Standalone viewer in `public/viewer.html`, postMessage bridge |
+| Sun Position       | SunCalc                                             | Solar azimuth/altitude from date, time, lat/lng              |
 
 **Why Supabase**: One SDK gives auth + database + file storage + RLS. Avoids stitching together NextAuth + Prisma + S3 + IAM policies. Underneath it's standard Postgres and S3 — low lock-in, easy to migrate away.
 
@@ -77,7 +77,12 @@ CC_DesignExplorer/
 ├── components.json                        # shadcn/ui configuration
 ├── ARCHITECTURE.md                        # This file
 ├── public/
-│   └── favicon.svg
+│   ├── favicon.svg
+│   ├── viewer.html                        # Standalone Three.js 3D viewer (loaded in iframe)
+│   └── hdri/                              # HDRI environment maps (CC0, ~1.5MB each)
+│       ├── studio_small.hdr               # Neutral studio lighting
+│       ├── kloofendal_overcast.hdr        # Soft outdoor overcast
+│       └── potsdamer_platz.hdr            # Urban environment
 ├── app/
 │   ├── layout.tsx                         # Root layout (html, body, metadata)
 │   ├── login/
@@ -112,6 +117,7 @@ CC_DesignExplorer/
 │   │   ├── utils.ts                       # cn() helper
 │   │   ├── colors.ts                      # HSL color interpolation
 │   │   ├── file-ingestion.ts              # JSON parse, folder traverse, asset collection
+│   │   ├── sun-path.ts                    # Solar position computation (SunCalc wrapper)
 │   │   ├── api.ts                         # Client-side API helpers (fetch wrappers)
 │   │   └── supabase/
 │   │       ├── client.ts                  # Browser Supabase client
@@ -151,7 +157,8 @@ CC_DesignExplorer/
 │   │   ├── useFilteredDesigns.ts          # Derived: filtered rows from RQ data + brush ranges
 │   │   ├── useColorScale.ts              # (value) -> hex color function
 │   │   ├── useObjectUrl.ts               # auto-revoke object URL lifecycle
-│   │   └── useRefreshAssets.ts            # Invalidate asset URL query on 403
+│   │   ├── useRefreshAssets.ts            # Invalidate asset URL query on 403
+│   │   └── use-sun-path.ts               # Hook: computes sun path from viewer settings
 │   │
 │   ├── types/
 │   │   ├── design.ts                      # DesignIteration, ColumnMeta interfaces
@@ -223,13 +230,11 @@ ExplorerClient ('use client', hydration, keyboard shortcuts)
         │   ├── ImageViewer (conditional: viewMode === '2d')
         │   │   └── <img> with fade transitions
         │   ├── ModelViewer (conditional: viewMode === '3d')
-        │   │   └── <Canvas> (R3F)
-        │   │       └── <Suspense>
-        │   │           └── ModelScene
-        │   │               ├── ambientLight + directionalLight
-        │   │               ├── OrbitControls
-        │   │               ├── Environment (preset="studio")
-        │   │               └── DesignModel (useGLTF + color override)
+        │   │   └── <iframe src="/viewer.html"> (standalone Three.js)
+        │   │       ├── postMessage bridge: loadModel, loadContext, updateSettings, updateSunPath, preloadModels
+        │   │       ├── modelCache (preloaded ArrayBuffers)
+        │   │       ├── HDRI env maps (RGBELoader + PMREMGenerator)
+        │   │       └── Sun path arc line + marker + directional light positioning
         │   ├── CatalogueView (conditional: viewMode === 'catalogue')
         │   │   └── ScrollArea > thumbnail grid (filtered designs)
         │   └── ViewerSettingsPanel (conditional: 3D settings open)
@@ -385,7 +390,7 @@ interface ViewerSettingsSlice {
 }
 ```
 
-Default settings: directional=2.0, exposure=3.0, grid=off. Profiles stored in `localStorage` under key `design-explorer:viewer-profiles`.
+Default settings: directional=2.0, exposure=3.0, grid=off, environmentPreset='none', sunPathEnabled=false. Profiles stored in `localStorage` under key `design-explorer:viewer-profiles`. `loadProfile` merges saved settings with `DEFAULT_VIEWER_SETTINGS` for backward compatibility (old profiles missing new fields get defaults).
 
 #### ParameterSettingsSlice
 ```typescript
@@ -668,8 +673,9 @@ function getColorHex(value: number, min: number, max: number): string {
 
 ### Test Organization
 
-- `src/lib/__tests__/` — pure utility tests (file-ingestion, colors)
-- `src/store/__tests__/` — Zustand store slice tests
+- `src/lib/__tests__/` — pure utility tests (file-ingestion, colors, sun-path)
+- `src/store/__tests__/` — Zustand store slice tests (viewer-settings incl. environment + sun path)
+- `src/components/viewer/__tests__/` — viewer component tests (camera-lock, preload-urls)
 - `e2e/` — Playwright end-to-end tests
 
 ### Conventions
@@ -736,10 +742,35 @@ Validation runs before the design lookup and storage upload, rejecting invalid f
 
 ### GLB Loading Strategy
 
-- **Lazy**: Models load on-demand when a design is selected. No preloading.
-- **Cached**: `useGLTF` from drei caches by URL internally. Reselecting is instant.
-- **Suspense**: Wrap viewer in `<Suspense>` with skeleton fallback.
-- **Draco**: If Draco-compressed, `useGLTF` auto-loads the decoder from CDN.
+- **Preloaded**: On dataset load, all GLB URLs are collected and sent to the iframe via `preloadModels` message. The iframe fetches them (3 concurrent) into a `modelCache` Map (URL → ArrayBuffer). Progress reported back via `preloadProgress` messages; React shows a thin progress bar.
+- **Cache-first**: `loadModel()` and `loadContextModel()` check `modelCache` before fetching. Cache hit → instant display (no network). ArrayBuffers are cloned via `.slice(0)` before passing to GLTFLoader (which may transfer ownership).
+- **Draco**: If Draco-compressed, GLTFLoader auto-loads the decoder from CDN.
+
+### HDRI Environment Lighting
+
+Three HDRI environment maps (`public/hdri/`, CC0 from Poly Haven, 1K resolution ~1.5MB each):
+
+| Preset | File | Character |
+|--------|------|-----------|
+| `studio` | `studio_small.hdr` | Neutral studio |
+| `overcast` | `kloofendal_overcast.hdr` | Soft outdoor |
+| `urban` | `potsdamer_platz.hdr` | Urban |
+
+- **Loader**: `RGBELoader` + `PMREMGenerator.fromEquirectangular()` in `viewer.html`
+- **Cache**: `envCache` Map stores processed env maps — each HDRI loaded only once
+- **Settings**: `environmentPreset` (`'none'|'studio'|'overcast'|'urban'`) and `environmentIntensity` (0–3) in `ViewerSettings`
+- **Coexistence**: Manual ambient + directional lights remain active alongside HDRI — user controls them independently
+- **UI**: Environment dropdown + intensity slider in Lighting section of `ViewerSettingsPanel`
+
+### Sun Path Visualization
+
+Solar position computed in React via `SunCalc`, sent to iframe for rendering.
+
+- **Computation** (`src/lib/sun-path.ts`): `computeSunPath(date, time, lat, lng, sceneRadius)` returns `{ sunPosition, arcPoints, sunAltitude, sunAzimuth }`. Converts SunCalc's altitude/azimuth to Three.js Y-up coordinates. Arc sampled at 48 points from sunrise to sunset.
+- **Hook** (`src/hooks/use-sun-path.ts`): Reads sun settings from Zustand, calls `computeSunPath`, memoized. Returns `null` when disabled.
+- **Viewer**: `updateSunPath` message handler draws orange arc line (`THREE.Line`, 0.6 opacity), yellow sun marker sphere, and moves directional light to sun position. Disabling restores light to default position `(5, 10, 5)`.
+- **Settings**: `sunPathEnabled`, `sunDate`, `sunTime` (0–24 decimal hours), `sunLatitude` (-90 to 90), `sunLongitude` (-180 to 180) in `ViewerSettings`
+- **UI**: Collapsible "Sun Path" section in `ViewerSettingsPanel` with enable toggle, date input, time/lat/lng sliders
 
 ---
 
@@ -749,12 +780,14 @@ Validation runs before the design lookup and storage upload, rejecting invalid f
 |-------------|--------------------------------------------------------------|
 | Zustand     | Granular selectors — never subscribe to full store           |
 | ECharts     | `notMerge={true}`, `lazyUpdate={true}`, `useMemo` on option  |
-| Three.js    | `frameloop="demand"` (no idle 60fps), `dpr={[1,2]}`         |
+| Three.js    | Standalone iframe viewer; 60fps render loop with damped controls |
+| GLB Preload | All model URLs preloaded (3 concurrent) into iframe `modelCache`; design switch is instant |
+| HDRI        | `envCache` caches processed env maps; each HDRI loaded once   |
 | Assets      | Signed URLs from server; blob URLs via `useObjectUrl` hook    |
 | Filtering   | Derived via `useMemo` from RQ data + brush ranges            |
 | Server data | TanStack Query: 5min stale, dedup, background refetch        |
 | Re-renders  | Brush events debounced 50ms, chart option memoized           |
-| GLB models  | Lazy load + useGLTF cache, no preloading of 1,000 models     |
+| GLB models  | Preloaded into iframe ArrayBuffer cache; cache-first on display |
 
 ---
 

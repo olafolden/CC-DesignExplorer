@@ -4,6 +4,37 @@
 
 ## v2: Next.js Migration
 
+### Sun Path Visualization (2026-04-13)
+- Solar position computed via SunCalc library in React, sent to iframe viewer
+- `computeSunPath()` utility (`src/lib/sun-path.ts`): date/time/lat/lng → position, arc, altitude, azimuth
+- `useSunPath` hook reads Zustand settings, returns memoized SunPathData (null when disabled)
+- Viewer draws orange arc line (48-point day path) + yellow sun marker sphere
+- Directional light position follows sun position; disabling restores default (5, 10, 5)
+- New ViewerSettings fields: `sunPathEnabled`, `sunDate`, `sunTime`, `sunLatitude`, `sunLongitude`
+- Collapsible "Sun Path" section in ViewerSettingsPanel with date input, time/lat/lng sliders
+- Profiles save/restore sun settings with backward compatibility (old profiles get defaults)
+- 7 unit tests for `computeSunPath` (altitude, azimuth, arc shape, night detection)
+- 4 unit tests for viewer settings (defaults, set/reset, profile round-trip)
+
+### HDRI Environment Lighting (2026-04-13)
+- Three CC0 HDRI maps from Poly Haven (1K, ~1.5MB each): Studio, Overcast, Urban
+- `RGBELoader` + `PMREMGenerator` in `viewer.html` with per-preset env cache
+- `applyEnvironment()` function handles preset switching with `scene.environment`
+- Manual ambient/directional lights remain active alongside HDRI for independent control
+- New ViewerSettings fields: `environmentPreset` ('none'|'studio'|'overcast'|'urban'), `environmentIntensity` (0–3)
+- Environment dropdown + intensity slider in Lighting section of ViewerSettingsPanel
+- Profile backward compat fix: `loadProfile` now merges with `DEFAULT_VIEWER_SETTINGS`
+- 7 unit tests for environment defaults, set/reset, profile save/restore, backward compat
+
+### GLB Model Preloading (2026-04-13)
+- All unique model URLs collected from `assetMap` and sent to iframe on dataset load
+- iframe `preloadModels` handler: 3-concurrent-fetch into `modelCache` (URL → ArrayBuffer)
+- `preloadProgress` messages posted back to React; thin progress bar + count shown in viewer
+- `loadModel()` and `loadContextModel()` check cache before fetch; cache hit → instant display
+- ArrayBuffers cloned via `.slice(0)` before GLTFLoader parse (prevents transfer ownership issues)
+- Refactored `loadModel()` → `parseAndShowModel()`, `loadContextModel()` → `parseAndShowContext()`
+- 7 unit tests for URL collection from AssetMap (dedup, empty, multi-category)
+
 ### Context Model Support (2026-04-13)
 - Persistent "context" 3D model (e.g., site surroundings) stays visible regardless of active design
 - Uses sentinel design key `__context__` within existing DB schema — no new tables
