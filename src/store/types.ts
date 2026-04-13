@@ -59,6 +59,11 @@ export interface ViewerSettings {
   doubleSided: boolean
   environmentPreset: 'none' | 'studio' | 'overcast' | 'urban'
   environmentIntensity: number
+  sunPathEnabled: boolean
+  sunDate: string
+  sunTime: number
+  sunLatitude: number
+  sunLongitude: number
 }
 
 export interface ViewerProfile {

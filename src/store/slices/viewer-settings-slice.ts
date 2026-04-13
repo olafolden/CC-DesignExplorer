@@ -17,6 +17,11 @@ export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
   doubleSided: true,
   environmentPreset: 'none',
   environmentIntensity: 1.0,
+  sunPathEnabled: false,
+  sunDate: '2026-06-21',
+  sunTime: 12.0,
+  sunLatitude: 52.52,
+  sunLongitude: 13.405,
 }
 
 function loadProfilesFromStorage(): ViewerProfile[] {

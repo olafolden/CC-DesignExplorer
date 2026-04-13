@@ -60,6 +60,11 @@ let currentEnvPreset = 'none';
 let defaultCameraPos = new THREE.Vector3(0, 3, 3);
 let defaultTarget = new THREE.Vector3(0, 0, 0);
 
+// Sun path visualization
+const defaultDirLightPos = new THREE.Vector3(5, 10, 5);
+let sunArcLine = null;
+let sunMarker = null;
+
 function computeTransform(model) {
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
@@ -272,6 +277,41 @@ function loadModel(url, preserveCamera) {
     .catch(err => console.error('Load error:', err));
 }
 
+function updateSunPath(enabled, sunPosition, arcPoints) {
+  // Remove old sun visualization
+  if (sunArcLine) { scene.remove(sunArcLine); sunArcLine = null; }
+  if (sunMarker) { scene.remove(sunMarker); sunMarker = null; }
+
+  if (!enabled || !sunPosition) {
+    // Restore default directional light position
+    dirLight.position.copy(defaultDirLightPos);
+    return;
+  }
+
+  // Draw arc line
+  if (arcPoints && arcPoints.length > 1) {
+    const points = arcPoints.map(p => new THREE.Vector3(p.x, p.y, p.z));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      opacity: 0.6,
+    });
+    sunArcLine = new THREE.Line(geometry, material);
+    scene.add(sunArcLine);
+  }
+
+  // Sun marker (small sphere)
+  const markerGeo = new THREE.SphereGeometry(0.1, 16, 16);
+  const markerMat = new THREE.MeshBasicMaterial({ color: 0xffdd44 });
+  sunMarker = new THREE.Mesh(markerGeo, markerMat);
+  sunMarker.position.set(sunPosition.x, sunPosition.y, sunPosition.z);
+  scene.add(sunMarker);
+
+  // Move directional light to match sun position
+  dirLight.position.set(sunPosition.x, sunPosition.y, sunPosition.z);
+}
+
 // Listen for messages from parent React app
 window.addEventListener('message', (e) => {
   if (e.data?.type === 'loadContext') {
@@ -311,6 +351,8 @@ window.addEventListener('message', (e) => {
     }
     // 3 concurrent fetches
     Promise.all([fetchNext(), fetchNext(), fetchNext()]);
+  } else if (e.data?.type === 'updateSunPath') {
+    updateSunPath(e.data.enabled, e.data.sunPosition, e.data.arcPoints);
   }
 });
 

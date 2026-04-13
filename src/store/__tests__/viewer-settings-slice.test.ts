@@ -49,6 +49,39 @@ describe('ViewerSettingsSlice', () => {
       expect(s.exposure).toBe(3.0)
       expect(s.gridVisible).toBe(false)
     })
+
+    it('has sunPathEnabled as false', () => {
+      expect(useAppStore.getState().viewerSettings.sunPathEnabled).toBe(false)
+    })
+
+    it('has sunDate as 2026-06-21', () => {
+      expect(useAppStore.getState().viewerSettings.sunDate).toBe('2026-06-21')
+    })
+
+    it('has sunTime as 12.0', () => {
+      expect(useAppStore.getState().viewerSettings.sunTime).toBe(12.0)
+    })
+
+    it('has sunLatitude as 52.52', () => {
+      expect(useAppStore.getState().viewerSettings.sunLatitude).toBe(52.52)
+    })
+
+    it('setViewerSettings updates sun path fields', () => {
+      useAppStore.getState().setViewerSettings({ sunPathEnabled: true, sunTime: 14.5, sunLatitude: 40.0 })
+      const s = useAppStore.getState().viewerSettings
+      expect(s.sunPathEnabled).toBe(true)
+      expect(s.sunTime).toBe(14.5)
+      expect(s.sunLatitude).toBe(40.0)
+    })
+
+    it('resetViewerSettings restores sun path defaults', () => {
+      useAppStore.getState().setViewerSettings({ sunPathEnabled: true, sunTime: 8.0, sunLatitude: -30 })
+      useAppStore.getState().resetViewerSettings()
+      const s = useAppStore.getState().viewerSettings
+      expect(s.sunPathEnabled).toBe(false)
+      expect(s.sunTime).toBe(12.0)
+      expect(s.sunLatitude).toBe(52.52)
+    })
   })
 
   describe('environment defaults', () => {

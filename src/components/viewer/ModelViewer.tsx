@@ -2,15 +2,18 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { Box } from 'lucide-react'
 import { useAppStore } from '@/store'
 
+import type { SunPathData } from '@/lib/sun-path'
+
 interface ModelViewerProps {
   modelUrl: string | null
   contextModelUrl?: string | null
   designId: string
   color?: string
   allModelUrls?: string[]
+  sunPathData?: SunPathData | null
 }
 
-export function ModelViewer({ modelUrl, contextModelUrl, designId, allModelUrls }: ModelViewerProps) {
+export function ModelViewer({ modelUrl, contextModelUrl, designId, allModelUrls, sunPathData }: ModelViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const viewerReady = useRef(false)
   const pendingUrl = useRef<string | null>(null)
@@ -88,6 +91,18 @@ export function ModelViewer({ modelUrl, contextModelUrl, designId, allModelUrls 
       postToViewer({ type: 'preloadModels', urls: allModelUrls })
     }
   }, [allModelUrls, postToViewer])
+
+  // Send sun path data to iframe
+  useEffect(() => {
+    if (viewerReady.current) {
+      postToViewer({
+        type: 'updateSunPath',
+        enabled: !!sunPathData,
+        sunPosition: sunPathData?.sunPosition ?? null,
+        arcPoints: sunPathData?.arcPoints ?? [],
+      })
+    }
+  }, [sunPathData, postToViewer])
 
   // Listen for resetCamera custom event from toolbar
   useEffect(() => {
