@@ -6,6 +6,7 @@ import { useAppStore } from '@/store'
 import { useDataset } from '@/hooks/queries/use-dataset'
 import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useColorScale } from '@/hooks/useColorScale'
+import { useSunPath } from '@/hooks/use-sun-path'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ViewerToolbar } from './ViewerToolbar'
 import { ImageViewer } from './ImageViewer'
@@ -45,6 +46,7 @@ export function ViewerPanel() {
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
+  const sunPathData = useSunPath()
 
   const { data: datasetResponse } = useDataset(currentDatasetId)
   const rawData = datasetResponse?.data ?? []
@@ -107,6 +109,7 @@ export function ViewerPanel() {
               contextModelUrl={contextModelUrl}
               designId={activeId}
               color={designColor}
+              sunPathData={sunPathData}
             />
           )}
         </ErrorBoundary>

@@ -15,6 +15,11 @@ export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
   wireframe: false,
   opacity: 1.0,
   doubleSided: true,
+  sunPathEnabled: false,
+  sunDate: '2026-06-21',
+  sunTime: 12.0,
+  sunLatitude: 52.52,
+  sunLongitude: 13.405,
 }
 
 function loadProfilesFromStorage(): ViewerProfile[] {
@@ -63,7 +68,7 @@ export const createViewerSettingsSlice: StateCreator<AppStore, [], [], ViewerSet
   loadProfile: (id) => {
     const profile = get().viewerProfiles.find((p) => p.id === id)
     if (profile) {
-      set({ viewerSettings: { ...profile.settings } })
+      set({ viewerSettings: { ...DEFAULT_VIEWER_SETTINGS, ...profile.settings } })
     }
   },
 

@@ -283,6 +283,57 @@ export function ViewerSettingsPanel({
 
       <Separator />
 
+      {/* Sun Path */}
+      <Section title="Sun Path" defaultOpen={false}>
+        <SwitchRow
+          label="Enable Sun Path"
+          checked={settings.sunPathEnabled}
+          onChange={(v) => set({ sunPathEnabled: v })}
+        />
+        {settings.sunPathEnabled && (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">Date</Label>
+              <input
+                type="date"
+                value={settings.sunDate}
+                onChange={(e) => set({ sunDate: e.target.value })}
+                className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <SliderRow
+              label="Time"
+              value={settings.sunTime}
+              min={0}
+              max={24}
+              step={0.25}
+              onChange={(v) => set({ sunTime: v })}
+            />
+            <p className="text-[10px] text-muted-foreground -mt-2">
+              {Math.floor(settings.sunTime)}:{String(Math.round((settings.sunTime % 1) * 60)).padStart(2, '0')}
+            </p>
+            <SliderRow
+              label="Latitude"
+              value={settings.sunLatitude}
+              min={-90}
+              max={90}
+              step={0.1}
+              onChange={(v) => set({ sunLatitude: v })}
+            />
+            <SliderRow
+              label="Longitude"
+              value={settings.sunLongitude}
+              min={-180}
+              max={180}
+              step={0.1}
+              onChange={(v) => set({ sunLongitude: v })}
+            />
+          </>
+        )}
+      </Section>
+
+      <Separator />
+
       {/* Camera */}
       <Section title="Camera">
         <SwitchRow

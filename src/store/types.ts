@@ -57,6 +57,11 @@ export interface ViewerSettings {
   wireframe: boolean
   opacity: number
   doubleSided: boolean
+  sunPathEnabled: boolean
+  sunDate: string
+  sunTime: number
+  sunLatitude: number
+  sunLongitude: number
 }
 
 export interface ViewerProfile {
