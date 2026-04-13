@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { Box, MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/store'
@@ -51,6 +52,18 @@ export function ViewerPanel() {
   const { assets: assetMap, contextModelUrl } = useAssetUrls(currentDatasetId)
 
   const activeCategory = useAppStore((s) => s.activeCategory)
+
+  // Collect all unique model URLs for preloading
+  const allModelUrls = useMemo(() => {
+    const urls = new Set<string>()
+    for (const entry of Object.values(assetMap)) {
+      for (const url of Object.values(entry.modelUrls)) {
+        urls.add(url)
+      }
+    }
+    return Array.from(urls)
+  }, [assetMap])
+
   const activeId = hoveredDesignId ?? selectedDesignId
 
   let designColor: string | undefined
@@ -107,6 +120,7 @@ export function ViewerPanel() {
               contextModelUrl={contextModelUrl}
               designId={activeId}
               color={designColor}
+              allModelUrls={allModelUrls}
             />
           )}
         </ErrorBoundary>

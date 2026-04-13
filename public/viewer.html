@@ -42,6 +42,9 @@ let contextModel = null;
 let referenceTransform = null; // { scale, center } from context model
 let currentSettings = null;
 
+// Model preload cache: url -> ArrayBuffer
+const modelCache = new Map();
+
 // Store default camera position for reset
 let defaultCameraPos = new THREE.Vector3(0, 3, 3);
 let defaultTarget = new THREE.Vector3(0, 0, 0);
@@ -63,9 +66,49 @@ function addModelWithTransform(model, transform) {
   return group;
 }
 
+function parseAndShowContext(buf) {
+  new GLTFLoader().parse(buf, '', (gltf) => {
+    const model = gltf.scene;
+    referenceTransform = computeTransform(model);
+    const group = addModelWithTransform(model, referenceTransform);
+
+    // Make context semi-transparent
+    group.traverse(child => {
+      if (!child.isMesh) return;
+      child.material = child.material.clone();
+      child.material.transparent = true;
+      child.material.opacity = 0.3;
+      child.material.side = THREE.DoubleSide;
+      child.material.needsUpdate = true;
+    });
+
+    scene.add(group);
+    contextModel = group;
+
+    // Auto-fit camera to context
+    const ss = referenceTransform.size.clone().multiplyScalar(referenceTransform.scale);
+    const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
+    controls.target.set(0, 0, 0);
+    if (isFlat) {
+      camera.position.set(0, 4, 0.5);
+    } else {
+      camera.position.set(0, 1.5, 3);
+    }
+    defaultCameraPos.copy(camera.position);
+    defaultTarget.copy(controls.target);
+    controls.update();
+  });
+}
+
 function loadContextModel(url) {
   if (contextModel) { scene.remove(contextModel); contextModel = null; }
   if (!url) { referenceTransform = null; return; }
+
+  const cached = modelCache.get(url);
+  if (cached) {
+    parseAndShowContext(cached.slice(0));
+    return;
+  }
 
   fetch(url)
     .then(r => {
@@ -73,37 +116,8 @@ function loadContextModel(url) {
       return r.arrayBuffer();
     })
     .then(buf => {
-      new GLTFLoader().parse(buf, '', (gltf) => {
-        const model = gltf.scene;
-        referenceTransform = computeTransform(model);
-        const group = addModelWithTransform(model, referenceTransform);
-
-        // Make context semi-transparent
-        group.traverse(child => {
-          if (!child.isMesh) return;
-          child.material = child.material.clone();
-          child.material.transparent = true;
-          child.material.opacity = 0.3;
-          child.material.side = THREE.DoubleSide;
-          child.material.needsUpdate = true;
-        });
-
-        scene.add(group);
-        contextModel = group;
-
-        // Auto-fit camera to context
-        const ss = referenceTransform.size.clone().multiplyScalar(referenceTransform.scale);
-        const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
-        controls.target.set(0, 0, 0);
-        if (isFlat) {
-          camera.position.set(0, 4, 0.5);
-        } else {
-          camera.position.set(0, 1.5, 3);
-        }
-        defaultCameraPos.copy(camera.position);
-        defaultTarget.copy(controls.target);
-        controls.update();
-      });
+      modelCache.set(url, buf);
+      parseAndShowContext(buf.slice(0));
     })
     .catch(err => console.error('Context load error:', err));
 }
@@ -148,9 +162,55 @@ function applySettings(settings) {
   }
 }
 
+function parseAndShowModel(buf, preserveCamera) {
+  new GLTFLoader().parse(buf, '', (gltf) => {
+    const model = gltf.scene;
+    model.traverse(child => {
+      if (!child.isMesh) return;
+      child.material.side = THREE.DoubleSide;
+      if (child.geometry.attributes.color) {
+        child.material.vertexColors = true;
+        child.material.color = new THREE.Color(0xffffff);
+        child.material.needsUpdate = true;
+      }
+    });
+
+    // Use shared coordinate space from context model, or independent auto-fit
+    const transform = referenceTransform ?? computeTransform(model);
+    const group = addModelWithTransform(model, transform);
+    scene.add(group);
+    currentModel = group;
+
+    if (!preserveCamera) {
+      const ss = transform.size.clone().multiplyScalar(transform.scale);
+      const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
+      controls.target.set(0, 0, 0);
+      if (isFlat) {
+        camera.position.set(0, 4, 0.5);
+      } else {
+        camera.position.set(0, 1.5, 3);
+      }
+      defaultCameraPos.copy(camera.position);
+      defaultTarget.copy(controls.target);
+    }
+    controls.update();
+
+    // Re-apply material settings after model load
+    if (currentSettings) {
+      applyMaterialSettings(group, currentSettings);
+    }
+  });
+}
+
 function loadModel(url, preserveCamera) {
   if (currentModel) { scene.remove(currentModel); currentModel = null; }
   if (!url) return;
+
+  const cached = modelCache.get(url);
+  if (cached) {
+    parseAndShowModel(cached.slice(0), preserveCamera);
+    return;
+  }
 
   fetch(url)
     .then(r => {
@@ -158,43 +218,8 @@ function loadModel(url, preserveCamera) {
       return r.arrayBuffer();
     })
     .then(buf => {
-      new GLTFLoader().parse(buf, '', (gltf) => {
-        const model = gltf.scene;
-        model.traverse(child => {
-          if (!child.isMesh) return;
-          child.material.side = THREE.DoubleSide;
-          if (child.geometry.attributes.color) {
-            child.material.vertexColors = true;
-            child.material.color = new THREE.Color(0xffffff);
-            child.material.needsUpdate = true;
-          }
-        });
-
-        // Use shared coordinate space from context model, or independent auto-fit
-        const transform = referenceTransform ?? computeTransform(model);
-        const group = addModelWithTransform(model, transform);
-        scene.add(group);
-        currentModel = group;
-
-        if (!preserveCamera) {
-          const ss = transform.size.clone().multiplyScalar(transform.scale);
-          const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
-          controls.target.set(0, 0, 0);
-          if (isFlat) {
-            camera.position.set(0, 4, 0.5);
-          } else {
-            camera.position.set(0, 1.5, 3);
-          }
-          defaultCameraPos.copy(camera.position);
-          defaultTarget.copy(controls.target);
-        }
-        controls.update();
-
-        // Re-apply material settings after model load
-        if (currentSettings) {
-          applyMaterialSettings(group, currentSettings);
-        }
-      });
+      modelCache.set(url, buf);
+      parseAndShowModel(buf.slice(0), preserveCamera);
     })
     .catch(err => console.error('Load error:', err));
 }
@@ -211,6 +236,33 @@ window.addEventListener('message', (e) => {
     camera.position.copy(defaultCameraPos);
     controls.target.copy(defaultTarget);
     controls.update();
+  } else if (e.data?.type === 'preloadModels') {
+    const urls = (e.data.urls || []).filter(u => !modelCache.has(u));
+    if (urls.length === 0) {
+      window.parent.postMessage({ type: 'preloadProgress', loaded: 0, total: 0 }, '*');
+      return;
+    }
+    let loaded = 0;
+    const total = urls.length;
+    const queue = [...urls];
+    async function fetchNext() {
+      while (queue.length > 0) {
+        const url = queue.shift();
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            modelCache.set(url, buf);
+          }
+        } catch (err) {
+          console.warn('Preload failed:', url, err);
+        }
+        loaded++;
+        window.parent.postMessage({ type: 'preloadProgress', loaded, total }, '*');
+      }
+    }
+    // 3 concurrent fetches
+    Promise.all([fetchNext(), fetchNext(), fetchNext()]);
   }
 });
 
