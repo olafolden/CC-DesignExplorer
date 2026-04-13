@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git commit:*)",
+      "Bash(npx next:*)",
+      "Bash(git reset:*)",
+      "Bash(git log:*)",
+      "Bash(npx eslint:*)"
+    ]
+  }
+}
