@@ -17,7 +17,7 @@ export function CatalogueView() {
   const colorMetricKey = useAppStore((s) => s.colorMetricKey)
   const colorScale = useColorScale()
 
-  const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
+  const { assets: assetMap } = useAssetUrls(currentDatasetId)
   const filteredDesigns = useFilteredDesigns()
 
   const selectedRef = useRef<HTMLButtonElement>(null)

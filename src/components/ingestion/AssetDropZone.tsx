@@ -21,7 +21,7 @@ export function AssetDropZone() {
   const queryClient = useQueryClient()
   const currentDatasetId = useAppStore((s) => s.currentDatasetId)
 
-  const { data: assetMap = {}, isSuccess: hasAssets } = useAssetUrls(currentDatasetId)
+  const { assets: assetMap, isSuccess: hasAssets } = useAssetUrls(currentDatasetId)
   const uploadAssetMutation = useUploadAsset()
 
   const assetCount = Object.keys(assetMap).length

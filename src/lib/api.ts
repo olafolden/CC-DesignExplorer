@@ -77,6 +77,12 @@ export interface AssetMap {
   [designKey: string]: { imageUrl: string | null; modelUrls: Record<string, string> }
 }
 
+export interface AssetUrlsResponse {
+  assets: AssetMap
+  contextModelUrl: string | null
+  contextModelUrls: Record<string, string> | null
+}
+
 export async function uploadAsset(
   file: File,
   datasetId: string,
@@ -102,7 +108,7 @@ export async function uploadAsset(
   return res.json()
 }
 
-export async function fetchAssetUrls(datasetId: string): Promise<AssetMap> {
+export async function fetchAssetUrls(datasetId: string): Promise<AssetUrlsResponse> {
   return apiFetch(`/api/assets/batch-urls?datasetId=${encodeURIComponent(datasetId)}`)
 }
 

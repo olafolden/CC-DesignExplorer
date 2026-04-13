@@ -46,5 +46,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json(assetMap)
+  // Separate context model from regular design assets
+  const contextEntry = assetMap['__context__'] ?? null
+  delete assetMap['__context__']
+
+  return NextResponse.json({
+    assets: assetMap,
+    contextModelUrl: contextEntry?.modelUrls?.['default'] ?? null,
+    contextModelUrls: contextEntry?.modelUrls ?? null,
+  })
 }

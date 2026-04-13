@@ -49,19 +49,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: magicResult.error }, { status: 400 })
     }
 
-    // Look up the design row to get its ID
-    const { data: design, error: designError } = await supabase
-      .from('designs')
-      .select('id')
-      .eq('dataset_id', datasetId)
-      .eq('design_key', designKey)
-      .single()
+    // Look up or create the design row
+    let designId: string
 
-    if (designError || !design) {
-      return NextResponse.json(
-        { error: `Design "${designKey}" not found in dataset` },
-        { status: 404 }
-      )
+    if (designKey === '__context__') {
+      // Context model: auto-create sentinel design row if it doesn't exist
+      const { data: existing } = await supabase
+        .from('designs')
+        .select('id')
+        .eq('dataset_id', datasetId)
+        .eq('design_key', '__context__')
+        .single()
+
+      if (existing) {
+        designId = existing.id
+      } else {
+        const { data: created, error: createError } = await supabase
+          .from('designs')
+          .insert({ dataset_id: datasetId, user_id: user.id, design_key: '__context__', params: {} })
+          .select('id')
+          .single()
+
+        if (createError || !created) {
+          return NextResponse.json(
+            { error: `Failed to create context design record: ${createError?.message}` },
+            { status: 500 }
+          )
+        }
+        designId = created.id
+      }
+    } else {
+      const { data: design, error: designError } = await supabase
+        .from('designs')
+        .select('id')
+        .eq('dataset_id', datasetId)
+        .eq('design_key', designKey)
+        .single()
+
+      if (designError || !design) {
+        return NextResponse.json(
+          { error: `Design "${designKey}" not found in dataset` },
+          { status: 404 }
+        )
+      }
+      designId = design.id
     }
 
     // Upload to Supabase Storage
@@ -100,7 +131,7 @@ export async function POST(request: NextRequest) {
       .from('assets')
       .upsert(
         {
-          design_id: design.id,
+          design_id: designId,
           user_id: user.id,
           asset_type: assetType,
           category,

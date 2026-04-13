@@ -38,11 +38,75 @@ let gridHelper = new THREE.GridHelper(4, 10, 0x444444, 0x333333);
 scene.add(gridHelper);
 
 let currentModel = null;
+let contextModel = null;
+let referenceTransform = null; // { scale, center } from context model
 let currentSettings = null;
 
 // Store default camera position for reset
 let defaultCameraPos = new THREE.Vector3(0, 3, 3);
 let defaultTarget = new THREE.Vector3(0, 0, 0);
+
+function computeTransform(model) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const scale = maxDim > 0 ? 2 / maxDim : 1;
+  return { scale, center, size };
+}
+
+function addModelWithTransform(model, transform) {
+  model.position.set(-transform.center.x, -transform.center.y, -transform.center.z);
+  const group = new THREE.Group();
+  group.scale.setScalar(transform.scale);
+  group.add(model);
+  return group;
+}
+
+function loadContextModel(url) {
+  if (contextModel) { scene.remove(contextModel); contextModel = null; }
+  if (!url) { referenceTransform = null; return; }
+
+  fetch(url)
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.arrayBuffer();
+    })
+    .then(buf => {
+      new GLTFLoader().parse(buf, '', (gltf) => {
+        const model = gltf.scene;
+        referenceTransform = computeTransform(model);
+        const group = addModelWithTransform(model, referenceTransform);
+
+        // Make context semi-transparent
+        group.traverse(child => {
+          if (!child.isMesh) return;
+          child.material = child.material.clone();
+          child.material.transparent = true;
+          child.material.opacity = 0.3;
+          child.material.side = THREE.DoubleSide;
+          child.material.needsUpdate = true;
+        });
+
+        scene.add(group);
+        contextModel = group;
+
+        // Auto-fit camera to context
+        const ss = referenceTransform.size.clone().multiplyScalar(referenceTransform.scale);
+        const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
+        controls.target.set(0, 0, 0);
+        if (isFlat) {
+          camera.position.set(0, 4, 0.5);
+        } else {
+          camera.position.set(0, 1.5, 3);
+        }
+        defaultCameraPos.copy(camera.position);
+        defaultTarget.copy(controls.target);
+        controls.update();
+      });
+    })
+    .catch(err => console.error('Context load error:', err));
+}
 
 function applyMaterialSettings(model, settings) {
   if (!model || !settings) return;
@@ -106,21 +170,14 @@ function loadModel(url, preserveCamera) {
           }
         });
 
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const s = maxDim > 0 ? 2 / maxDim : 1;
-
-        model.position.set(-center.x, -center.y, -center.z);
-        const group = new THREE.Group();
-        group.scale.setScalar(s);
-        group.add(model);
+        // Use shared coordinate space from context model, or independent auto-fit
+        const transform = referenceTransform ?? computeTransform(model);
+        const group = addModelWithTransform(model, transform);
         scene.add(group);
         currentModel = group;
 
         if (!preserveCamera) {
-          const ss = size.clone().multiplyScalar(s);
+          const ss = transform.size.clone().multiplyScalar(transform.scale);
           const isFlat = ss.y < 0.1 * Math.max(ss.x, ss.z);
           controls.target.set(0, 0, 0);
           if (isFlat) {
@@ -144,7 +201,9 @@ function loadModel(url, preserveCamera) {
 
 // Listen for messages from parent React app
 window.addEventListener('message', (e) => {
-  if (e.data?.type === 'loadModel') {
+  if (e.data?.type === 'loadContext') {
+    loadContextModel(e.data.url);
+  } else if (e.data?.type === 'loadModel') {
     loadModel(e.data.url, e.data.preserveCamera ?? false);
   } else if (e.data?.type === 'updateSettings') {
     applySettings(e.data.settings);

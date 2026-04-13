@@ -4,14 +4,16 @@ import { useAppStore } from '@/store'
 
 interface ModelViewerProps {
   modelUrl: string | null
+  contextModelUrl?: string | null
   designId: string
   color?: string
 }
 
-export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
+export function ModelViewer({ modelUrl, contextModelUrl, designId }: ModelViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const viewerReady = useRef(false)
   const pendingUrl = useRef<string | null>(null)
+  const pendingContextUrl = useRef<string | null | undefined>(undefined)
   const hasLoadedFirst = useRef(false)
   const viewerSettings = useAppStore((s) => s.viewerSettings)
 
@@ -27,7 +29,12 @@ export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
         hasLoadedFirst.current = false
         // Send current settings immediately
         postToViewer({ type: 'updateSettings', settings: viewerSettings })
-        // Send any pending URL
+        // Send context model first (sets reference coordinate space)
+        if (pendingContextUrl.current !== undefined) {
+          postToViewer({ type: 'loadContext', url: pendingContextUrl.current ?? '' })
+          pendingContextUrl.current = undefined
+        }
+        // Send any pending design model URL
         if (pendingUrl.current !== null) {
           postToViewer({ type: 'loadModel', url: pendingUrl.current, preserveCamera: false })
           if (pendingUrl.current) hasLoadedFirst.current = true
@@ -49,6 +56,16 @@ export function ModelViewer({ modelUrl, designId }: ModelViewerProps) {
       pendingUrl.current = url
     }
   }, [modelUrl, postToViewer])
+
+  // Send context model URL to iframe whenever it changes
+  useEffect(() => {
+    const url = contextModelUrl ?? ''
+    if (viewerReady.current) {
+      postToViewer({ type: 'loadContext', url })
+    } else {
+      pendingContextUrl.current = contextModelUrl
+    }
+  }, [contextModelUrl, postToViewer])
 
   // Send settings to iframe whenever they change
   useEffect(() => {

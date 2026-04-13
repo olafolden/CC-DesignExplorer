@@ -4,3 +4,9 @@ export interface AssetEntry {
 }
 
 export type AssetMap = Record<string, AssetEntry>
+
+export interface AssetUrlsResponse {
+  assets: AssetMap
+  contextModelUrl: string | null
+  contextModelUrls: Record<string, string> | null
+}

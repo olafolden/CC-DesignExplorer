@@ -48,7 +48,7 @@ export function ViewerPanel() {
 
   const { data: datasetResponse } = useDataset(currentDatasetId)
   const rawData = datasetResponse?.data ?? []
-  const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
+  const { assets: assetMap, contextModelUrl } = useAssetUrls(currentDatasetId)
 
   const activeCategory = useAppStore((s) => s.activeCategory)
   const activeId = hoveredDesignId ?? selectedDesignId
@@ -104,6 +104,7 @@ export function ViewerPanel() {
           ) : (
             <ModelViewer
               modelUrl={modelUrl}
+              contextModelUrl={contextModelUrl}
               designId={activeId}
               color={designColor}
             />
