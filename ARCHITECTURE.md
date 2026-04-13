@@ -155,7 +155,7 @@ CC_DesignExplorer/
 │   │
 │   ├── types/
 │   │   ├── design.ts                      # DesignIteration, ColumnMeta interfaces
-│   │   └── assets.ts                      # AssetEntry, AssetMap types
+│   │   └── assets.ts                      # AssetEntry, AssetMap, AssetUrlsResponse types
 │   │
 │   └── components/
 │       ├── ExplorerClient.tsx             # 'use client' wrapper for AppShell
@@ -344,8 +344,10 @@ interface SelectionSlice {
 interface ViewSlice {
   viewMode: '2d' | '3d' | 'catalogue';
   colorMetricKey: string | null;
+  activeCategory: string;            // Selected model category (default: 'default')
   setViewMode(mode): void;
   setColorMetricKey(key): void;
+  setActiveCategory(category): void;
 }
 ```
 
@@ -453,12 +455,13 @@ Five tables. RLS policies on every table filter by `user_id = auth.uid()`.
 | design_id        | uuid FK       | → designs, indexed                     |
 | user_id          | uuid FK       | → auth.users, indexed (for RLS)        |
 | asset_type       | text          | `'image'` or `'model'`                 |
+| category         | text          | Model category (default: `'default'`). Parsed from filename suffix (e.g., `design_0_massing.glb` → `'massing'`) |
 | storage_path     | text          | Path in Supabase Storage bucket        |
 | original_filename| text          |                                         |
 | mime_type        | text          |                                         |
 | size_bytes       | bigint        |                                         |
 | created_at       | timestamptz   | Default `now()`                        |
-|                  |               | UNIQUE(design_id, asset_type)          |
+|                  |               | UNIQUE(design_id, asset_type, category)|
 
 ### user_preferences
 | Column             | Type          | Notes                        |
@@ -681,7 +684,33 @@ function getColorHex(value: number, min: number, max: number): string {
 
 ### Local File/Asset Handling
 
-**Filename-to-ID mapping**: Filename stem (without extension) must match the design ID. E.g., `design_42.glb` → ID `"design_42"`.
+**Filename-to-ID mapping**: Filename stem is parsed by `parseAssetFilename()` in `src/lib/file-ingestion.ts`. Simple names map directly: `design_42.glb` → ID `"design_42"`, category `"default"`. Names with a trailing letter-segment map to a category: `design_0_massing.glb` → ID `"design_0"`, category `"massing"`.
+
+### Multi-Category 3D Models
+
+Each design can have multiple GLB files in different categories (e.g., massing, daylight, structure). Categories are parsed from the filename suffix after the last underscore if it starts with a letter.
+
+- **Database**: `assets.category` column (default `'default'`), unique constraint on `(design_id, asset_type, category)`
+- **API**: `GET /api/assets/batch-urls` returns `modelUrls: Record<string, string>` per design (keyed by category)
+- **Types**: `AssetEntry.modelUrls` is `Record<string, string>` (replaces the old singular `modelUrl`)
+- **UI**: Category switcher tabs appear in `ViewerToolbar` when a design has >1 category. `activeCategory` in `ViewSlice` tracks the selection.
+- **Migration**: `supabase/migrations/002_add_asset_category.sql`
+
+### Context Model
+
+A persistent "context" 3D model (e.g., site surroundings) that stays visible regardless of which design is selected. Uses the special design key `__context__` within the existing schema.
+
+- **Upload**: `POST /api/assets/upload` auto-creates a `__context__` design row in the dataset when a file named `context.glb` (or `context_<category>.glb`) is uploaded
+- **API**: `GET /api/assets/batch-urls` returns `contextModelUrl` and `contextModelUrls` (category map) separately from per-design assets
+- **Viewer**: Context model is loaded into the R3F scene at 0.3 opacity. It establishes the reference coordinate transform — design models are placed in the same coordinate space
+- **Backward compatible**: If no context file is uploaded, design models auto-fit independently as before
+
+### Camera Lock
+
+Camera position, angle, and zoom persist when switching between designs. Only the first model load auto-fits the view; subsequent design switches preserve the camera state. The reset camera button in the toolbar still works.
+
+- **Implementation**: `ModelViewer.tsx` tracks whether the initial fit has occurred. OrbitControls state is preserved across model swaps.
+- **Tests**: `src/components/viewer/__tests__/camera-lock.test.ts` (unit tests for lock behavior)
 
 ### Upload Validation Pipeline
 

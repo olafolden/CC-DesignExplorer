@@ -4,6 +4,33 @@
 
 ## v2: Next.js Migration
 
+### Context Model Support (2026-04-13)
+- Persistent "context" 3D model (e.g., site surroundings) stays visible regardless of active design
+- Uses sentinel design key `__context__` within existing DB schema — no new tables
+- Upload route auto-creates `__context__` design row when `context.glb` is uploaded
+- `GET /api/assets/batch-urls` returns `contextModelUrl` and `contextModelUrls` separately from per-design assets
+- Context model rendered semi-transparent (0.3 opacity) in R3F scene
+- Context model sets reference coordinate transform; design models placed in same coordinate space
+- Backward compatible: no context file = independent auto-fit (existing behavior)
+- `AssetUrlsResponse` type added to `src/types/assets.ts`
+- Fixed empty asset-urls response to return correct `{ assets, contextModelUrl, contextModelUrls }` shape
+
+### Multi-Category 3D Models (2026-04-13)
+- Support multiple GLB files per design via naming convention: `design_0_massing.glb`, `design_0_daylight.glb`, etc.
+- New `parseAssetFilename()` in `file-ingestion.ts` extracts designKey + category from filename
+- DB migration `002_add_asset_category.sql`: adds `category` column, updates unique constraint to `(design_id, asset_type, category)`
+- `AssetEntry.modelUrl` → `AssetEntry.modelUrls` (`Record<string, string>` keyed by category)
+- API routes updated to accept and return category-grouped model URLs
+- Category switcher tabs in `ViewerToolbar` (visible when design has >1 category)
+- `activeCategory` state added to Zustand `ViewSlice`, cleared on dataset reset
+- 88+ file-ingestion tests for `parseAssetFilename`, 39 view-slice tests for category state
+
+### Camera Lock on Design Switch (2026-04-13)
+- Camera position, angle, and zoom now persist when switching between designs
+- Only the first model load auto-fits; subsequent loads preserve camera state
+- Reset camera button in toolbar still works as before
+- 121 unit tests for camera lock behavior (`src/components/viewer/__tests__/camera-lock.test.ts`)
+
 ### Viewer Settings Profiles (2026-04-12)
 - Updated default viewer settings: directional=2.0, exposure=3.0, grid=off
 - Profile system: save, load, and delete named viewer settings snapshots
