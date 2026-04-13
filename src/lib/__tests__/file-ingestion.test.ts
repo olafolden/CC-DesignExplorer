@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseDesignData } from '../file-ingestion'
+import { parseDesignData, parseAssetFilename } from '../file-ingestion'
 import fs from 'fs'
 import path from 'path'
 
@@ -125,6 +125,92 @@ describe('parseDesignData', () => {
 
     it('throws on object without columns/data structure', () => {
       expect(() => parseDesignData('{"foo": "bar"}')).toThrow()
+    })
+  })
+
+  describe('parseAssetFilename', () => {
+    it('parses a plain design filename with no category', () => {
+      expect(parseAssetFilename('design_0.glb')).toEqual({
+        designKey: 'design_0',
+        category: 'default',
+      })
+    })
+
+    it('parses a design filename with a category suffix', () => {
+      expect(parseAssetFilename('design_0_massing.glb')).toEqual({
+        designKey: 'design_0',
+        category: 'massing',
+      })
+    })
+
+    it('parses a higher-numbered design with category', () => {
+      expect(parseAssetFilename('design_12_daylight.glb')).toEqual({
+        designKey: 'design_12',
+        category: 'daylight',
+      })
+    })
+
+    it('does not split on numeric-only segments', () => {
+      // design_0 should NOT become designKey='design', category='0'
+      expect(parseAssetFilename('design_0.glb')).toEqual({
+        designKey: 'design_0',
+        category: 'default',
+      })
+    })
+
+    it('does not split on segments starting with a digit', () => {
+      expect(parseAssetFilename('design_0_3dview.glb')).toEqual({
+        designKey: 'design_0_3dview',
+        category: 'default',
+      })
+    })
+
+    it('handles image files the same way', () => {
+      expect(parseAssetFilename('design_0.png')).toEqual({
+        designKey: 'design_0',
+        category: 'default',
+      })
+    })
+
+    it('handles filenames without underscores', () => {
+      expect(parseAssetFilename('mymodel.glb')).toEqual({
+        designKey: 'mymodel',
+        category: 'default',
+      })
+    })
+
+    it('handles multi-underscore design keys', () => {
+      expect(parseAssetFilename('my_custom_design_0_massing.glb')).toEqual({
+        designKey: 'my_custom_design_0',
+        category: 'massing',
+      })
+    })
+
+    it('handles context.glb as __context__ with default category', () => {
+      expect(parseAssetFilename('context.glb')).toEqual({
+        designKey: '__context__',
+        category: 'default',
+      })
+    })
+
+    it('handles context_terrain.glb as __context__ with terrain category', () => {
+      expect(parseAssetFilename('context_terrain.glb')).toEqual({
+        designKey: '__context__',
+        category: 'terrain',
+      })
+    })
+
+    it('handles context_buildings.glb as __context__ with buildings category', () => {
+      expect(parseAssetFilename('context_buildings.glb')).toEqual({
+        designKey: '__context__',
+        category: 'buildings',
+      })
+    })
+
+    it('does not treat "contextual" as a context file', () => {
+      // Only exact 'context' or 'context_*' should match
+      const result = parseAssetFilename('contextual.glb')
+      expect(result.designKey).not.toBe('__context__')
     })
   })
 

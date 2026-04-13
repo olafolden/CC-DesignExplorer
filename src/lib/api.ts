@@ -74,20 +74,22 @@ export async function deleteDataset(id: string): Promise<void> {
 // Asset APIs
 
 export interface AssetMap {
-  [designKey: string]: { imageUrl: string | null; modelUrl: string | null }
+  [designKey: string]: { imageUrl: string | null; modelUrls: Record<string, string> }
 }
 
 export async function uploadAsset(
   file: File,
   datasetId: string,
   designKey: string,
-  assetType: 'image' | 'model'
+  assetType: 'image' | 'model',
+  category: string = 'default'
 ): Promise<{ ok: boolean; storagePath: string }> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('datasetId', datasetId)
   formData.append('designKey', designKey)
   formData.append('assetType', assetType)
+  formData.append('category', category)
 
   const res = await fetch('/api/assets/upload', {
     method: 'POST',

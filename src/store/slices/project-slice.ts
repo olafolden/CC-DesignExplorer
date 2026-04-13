@@ -15,5 +15,6 @@ export const createProjectSlice: StateCreator<AppStore, [], [], ProjectSlice> = 
       selectedDesignId: null,
       hoveredDesignId: null,
       parameterSettings: {},
+      activeCategory: 'default',
     }),
 })

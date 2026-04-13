@@ -50,6 +50,7 @@ export function ViewerPanel() {
   const rawData = datasetResponse?.data ?? []
   const { data: assetMap = {} } = useAssetUrls(currentDatasetId)
 
+  const activeCategory = useAppStore((s) => s.activeCategory)
   const activeId = hoveredDesignId ?? selectedDesignId
 
   let designColor: string | undefined
@@ -64,11 +65,14 @@ export function ViewerPanel() {
   }
 
   const assets = activeId ? assetMap[activeId] : undefined
+  const modelUrls = assets?.modelUrls ?? {}
+  const availableCategories = Object.keys(modelUrls)
+  const modelUrl = modelUrls[activeCategory] ?? modelUrls['default'] ?? Object.values(modelUrls)[0] ?? null
 
   if (viewMode === 'catalogue') {
     return (
       <div className="flex flex-col h-full">
-        <ViewerToolbar />
+        <ViewerToolbar availableCategories={availableCategories} />
         <div className="flex-1 overflow-hidden">
           <ErrorBoundary>
             <CatalogueView />
@@ -81,7 +85,7 @@ export function ViewerPanel() {
   if (!activeId) {
     return (
       <div className="flex flex-col h-full">
-        <ViewerToolbar />
+        <ViewerToolbar availableCategories={availableCategories} />
         <EmptyState />
       </div>
     )
@@ -89,7 +93,7 @@ export function ViewerPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      <ViewerToolbar />
+      <ViewerToolbar availableCategories={availableCategories} />
       <div className="flex-1 overflow-hidden">
         <ErrorBoundary>
           {viewMode === '2d' ? (
@@ -99,7 +103,7 @@ export function ViewerPanel() {
             />
           ) : (
             <ModelViewer
-              modelUrl={assets?.modelUrl ?? null}
+              modelUrl={modelUrl}
               designId={activeId}
               color={designColor}
             />

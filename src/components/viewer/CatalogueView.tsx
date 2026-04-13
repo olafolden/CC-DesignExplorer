@@ -55,7 +55,7 @@ export function CatalogueView() {
             }
           }
 
-          const hasModel = !!assets?.modelUrl
+          const hasModel = assets?.modelUrls && Object.keys(assets.modelUrls).length > 0
 
           return (
             <button

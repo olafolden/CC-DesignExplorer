@@ -10,13 +10,15 @@ export function useUploadAsset() {
       file,
       datasetId,
       designKey,
+      category = 'default',
       assetType,
     }: {
       file: File
       datasetId: string
       designKey: string
+      category?: string
       assetType: 'image' | 'model'
-    }) => uploadAsset(file, datasetId, designKey, assetType),
+    }) => uploadAsset(file, datasetId, designKey, assetType, category),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.assetUrls(variables.datasetId),

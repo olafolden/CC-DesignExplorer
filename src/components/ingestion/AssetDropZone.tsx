@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { useAssetUrls } from '@/hooks/queries/use-asset-urls'
 import { useUploadAsset } from '@/hooks/mutations/use-upload-asset'
-import { collectAssetFiles } from '@/lib/file-ingestion'
+import { collectAssetFiles, parseAssetFilename } from '@/lib/file-ingestion'
 import { MAX_FILE_SIZE_BYTES } from '@/lib/file-validation'
 import { queryKeys } from '@/hooks/queries/keys'
 import { Button } from '@/components/ui/button'
@@ -26,11 +26,11 @@ export function AssetDropZone() {
 
   const assetCount = Object.keys(assetMap).length
   const imageCount = Object.values(assetMap).filter((a) => a.imageUrl).length
-  const modelCount = Object.values(assetMap).filter((a) => a.modelUrl).length
+  const modelCount = Object.values(assetMap).filter((a) => Object.keys(a.modelUrls).length > 0).length
   const isAssetsLoaded = hasAssets && assetCount > 0
 
   const uploadFiles = useCallback(
-    async (files: { name: string; file: File; designKey: string; assetType: 'image' | 'model' }[]) => {
+    async (files: { name: string; file: File; designKey: string; category: string; assetType: 'image' | 'model' }[]) => {
       if (!currentDatasetId) {
         setState('error')
         setError('No dataset loaded — upload data first')
@@ -57,12 +57,13 @@ export function AssetDropZone() {
       let uploaded = 0
       const errors: string[] = []
 
-      for (const { file, designKey, assetType } of files) {
+      for (const { file, designKey, category, assetType } of files) {
         try {
           await uploadAssetMutation.mutateAsync({
             file,
             datasetId: currentDatasetId,
             designKey,
+            category,
             assetType,
           })
           uploaded++
@@ -233,17 +234,17 @@ const MODEL_EXTENSIONS = ['.glb', '.gltf']
 
 function collectAssetFilesFromList(
   fileList: FileList
-): { name: string; file: File; designKey: string; assetType: 'image' | 'model' }[] {
-  const result: { name: string; file: File; designKey: string; assetType: 'image' | 'model' }[] = []
+): { name: string; file: File; designKey: string; category: string; assetType: 'image' | 'model' }[] {
+  const result: { name: string; file: File; designKey: string; category: string; assetType: 'image' | 'model' }[] = []
 
   for (const file of Array.from(fileList)) {
     const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
-    const designKey = file.name.replace(/\.[^.]+$/, '')
+    const { designKey, category } = parseAssetFilename(file.name)
 
     if (IMAGE_EXTENSIONS.includes(ext)) {
-      result.push({ name: file.name, file, designKey, assetType: 'image' })
+      result.push({ name: file.name, file, designKey, category, assetType: 'image' })
     } else if (MODEL_EXTENSIONS.includes(ext)) {
-      result.push({ name: file.name, file, designKey, assetType: 'model' })
+      result.push({ name: file.name, file, designKey, category, assetType: 'model' })
     }
   }
 

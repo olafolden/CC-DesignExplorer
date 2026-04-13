@@ -121,8 +121,32 @@ async function traverseDirectory(
   return files
 }
 
-function getDesignIdFromFilename(filename: string): string {
-  return filename.replace(/\.[^.]+$/, '')
+export interface ParsedAssetFilename {
+  designKey: string
+  category: string
+}
+
+export function parseAssetFilename(filename: string): ParsedAssetFilename {
+  const baseName = filename.replace(/\.[^.]+$/, '') // strip extension
+
+  // Context model detection: exact 'context' or 'context_<category>'
+  if (baseName === 'context') {
+    return { designKey: '__context__', category: 'default' }
+  }
+  const contextMatch = baseName.match(/^context_([a-zA-Z][a-zA-Z0-9]*)$/)
+  if (contextMatch) {
+    return { designKey: '__context__', category: contextMatch[1] }
+  }
+
+  // Category is the last _segment IF it starts with a letter
+  // design_0_massing -> designKey='design_0', category='massing'
+  // design_0         -> designKey='design_0', category='default'
+  const match = baseName.match(/^(.+)_([a-zA-Z][a-zA-Z0-9]*)$/)
+  if (match) {
+    return { designKey: match[1], category: match[2] }
+  }
+
+  return { designKey: baseName, category: 'default' }
 }
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp']
@@ -132,6 +156,7 @@ export interface AssetFileEntry {
   name: string
   file: File
   designKey: string
+  category: string
   assetType: 'image' | 'model'
 }
 
@@ -162,12 +187,12 @@ export async function collectAssetFiles(
 
   for (const { name, file } of allFiles) {
     const ext = name.substring(name.lastIndexOf('.')).toLowerCase()
-    const designKey = getDesignIdFromFilename(name)
+    const { designKey, category } = parseAssetFilename(name)
 
     if (IMAGE_EXTENSIONS.includes(ext)) {
-      result.push({ name, file, designKey, assetType: 'image' })
+      result.push({ name, file, designKey, category, assetType: 'image' })
     } else if (MODEL_EXTENSIONS.includes(ext)) {
-      result.push({ name, file, designKey, assetType: 'model' })
+      result.push({ name, file, designKey, category, assetType: 'model' })
     }
   }
 

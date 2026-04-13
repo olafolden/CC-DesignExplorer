@@ -20,8 +20,10 @@ export interface SelectionSlice {
 export interface ViewSlice {
   viewMode: '2d' | '3d' | 'catalogue'
   colorMetricKey: string | null
+  activeCategory: string
   setViewMode: (mode: '2d' | '3d' | 'catalogue') => void
   setColorMetricKey: (key: string | null) => void
+  setActiveCategory: (category: string) => void
 }
 
 export interface UISlice {

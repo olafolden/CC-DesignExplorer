@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const datasetId = formData.get('datasetId') as string | null
     const designKey = formData.get('designKey') as string | null
     const assetType = formData.get('assetType') as string | null
+    const category = (formData.get('category') as string | null) ?? 'default'
 
     if (!file || !datasetId || !designKey || !assetType) {
       return NextResponse.json(
@@ -66,7 +67,10 @@ export async function POST(request: NextRequest) {
     // Upload to Supabase Storage
     const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
     const safeDesignKey = designKey.replace(/[^a-zA-Z0-9_-]/g, '_')
-    const storagePath = `${user.id}/${datasetId}/${safeDesignKey}${ext}`
+    const safeCategory = category.replace(/[^a-zA-Z0-9_-]/g, '_')
+    const storagePath = category !== 'default'
+      ? `${user.id}/${datasetId}/${safeDesignKey}_${safeCategory}${ext}`
+      : `${user.id}/${datasetId}/${safeDesignKey}${ext}`
 
     // Browsers often misreport MIME types for 3D model files — map explicitly
     const mimeOverrides: Record<string, string> = {
@@ -99,12 +103,13 @@ export async function POST(request: NextRequest) {
           design_id: design.id,
           user_id: user.id,
           asset_type: assetType,
+          category,
           storage_path: storagePath,
           original_filename: file.name,
           mime_type: contentType,
           size_bytes: file.size,
         },
-        { onConflict: 'design_id,asset_type' }
+        { onConflict: 'design_id,asset_type,category' }
       )
 
     if (assetError) {

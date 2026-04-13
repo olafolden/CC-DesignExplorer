@@ -7,12 +7,18 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { ViewerSettingsPanel } from './ViewerSettingsPanel'
 import { cn } from '@/lib/utils'
 
-export function ViewerToolbar() {
+interface ViewerToolbarProps {
+  availableCategories?: string[]
+}
+
+export function ViewerToolbar({ availableCategories = [] }: ViewerToolbarProps) {
   const viewMode = useAppStore((s) => s.viewMode)
   const setViewMode = useAppStore((s) => s.setViewMode)
   const selectedDesignId = useAppStore((s) => s.selectedDesignId)
   const togglePanelSwap = useAppStore((s) => s.togglePanelSwap)
   const panelsSwapped = useAppStore((s) => s.panelsSwapped)
+  const activeCategory = useAppStore((s) => s.activeCategory)
+  const setActiveCategory = useAppStore((s) => s.setActiveCategory)
 
   const handleResetCamera = () => {
     // Dispatched via custom event so ModelViewer can pick it up and postMessage
@@ -26,6 +32,24 @@ export function ViewerToolbar() {
           <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-mono">
             {selectedDesignId}
           </Badge>
+        )}
+        {viewMode === '3d' && availableCategories.length > 1 && (
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-muted/30">
+            {availableCategories.map((cat) => (
+              <Button
+                key={cat}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-5 px-2 text-[10px] rounded-sm capitalize',
+                  activeCategory === cat && 'bg-background shadow-sm'
+                )}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </Button>
+            ))}
+          </div>
         )}
       </div>
 
