@@ -1,28 +1,97 @@
 {
   "columns": {
-    "inputs": ["floor_area", "num_floors", "glazing_ratio", "wall_thickness"],
-    "outputs": ["cost", "carbon", "energy_use", "daylight_factor", "structural_weight"]
+    "inputs": [
+      "Glass_Transmittance",
+      "Open_Closed_North"
+    ],
+    "outputs": [
+      "Window_Area",
+      "Floor_Area",
+      "Average_SDA",
+      "Area>50%"
+    ]
   },
   "data": [
-    { "id": "design_0",  "floor_area": 2400, "num_floors": 3, "glazing_ratio": 0.35, "wall_thickness": 200, "cost": 120000, "carbon": 450, "energy_use": 85, "daylight_factor": 3.2, "structural_weight": 1800 },
-    { "id": "design_1",  "floor_area": 2600, "num_floors": 4, "glazing_ratio": 0.45, "wall_thickness": 180, "cost": 135000, "carbon": 380, "energy_use": 72, "daylight_factor": 4.1, "structural_weight": 2100 },
-    { "id": "design_2",  "floor_area": 2200, "num_floors": 2, "glazing_ratio": 0.25, "wall_thickness": 250, "cost": 98000,  "carbon": 520, "energy_use": 95, "daylight_factor": 2.8, "structural_weight": 1650 },
-    { "id": "design_3",  "floor_area": 2800, "num_floors": 5, "glazing_ratio": 0.50, "wall_thickness": 160, "cost": 155000, "carbon": 310, "energy_use": 62, "daylight_factor": 4.5, "structural_weight": 2350 },
-    { "id": "design_4",  "floor_area": 2500, "num_floors": 3, "glazing_ratio": 0.40, "wall_thickness": 190, "cost": 142000, "carbon": 395, "energy_use": 78, "daylight_factor": 3.7, "structural_weight": 1950 },
-    { "id": "design_5",  "floor_area": 2350, "num_floors": 2, "glazing_ratio": 0.30, "wall_thickness": 220, "cost": 110000, "carbon": 480, "energy_use": 88, "daylight_factor": 3.0, "structural_weight": 1750 },
-    { "id": "design_6",  "floor_area": 3000, "num_floors": 6, "glazing_ratio": 0.55, "wall_thickness": 150, "cost": 168000, "carbon": 290, "energy_use": 55, "daylight_factor": 5.0, "structural_weight": 2500 },
-    { "id": "design_7",  "floor_area": 2450, "num_floors": 3, "glazing_ratio": 0.38, "wall_thickness": 210, "cost": 125000, "carbon": 420, "energy_use": 82, "daylight_factor": 3.4, "structural_weight": 1850 },
-    { "id": "design_8",  "floor_area": 2700, "num_floors": 4, "glazing_ratio": 0.48, "wall_thickness": 170, "cost": 148000, "carbon": 360, "energy_use": 68, "daylight_factor": 4.3, "structural_weight": 2200 },
-    { "id": "design_9",  "floor_area": 2300, "num_floors": 2, "glazing_ratio": 0.28, "wall_thickness": 240, "cost": 105000, "carbon": 500, "energy_use": 92, "daylight_factor": 2.9, "structural_weight": 1700 },
-    { "id": "design_10", "floor_area": 2900, "num_floors": 5, "glazing_ratio": 0.52, "wall_thickness": 155, "cost": 160000, "carbon": 305, "energy_use": 58, "daylight_factor": 4.8, "structural_weight": 2400 },
-    { "id": "design_11", "floor_area": 2550, "num_floors": 3, "glazing_ratio": 0.42, "wall_thickness": 195, "cost": 132000, "carbon": 410, "energy_use": 76, "daylight_factor": 3.6, "structural_weight": 1920 },
-    { "id": "design_12", "floor_area": 2380, "num_floors": 2, "glazing_ratio": 0.32, "wall_thickness": 215, "cost": 115000, "carbon": 465, "energy_use": 87, "daylight_factor": 3.1, "structural_weight": 1780 },
-    { "id": "design_13", "floor_area": 3100, "num_floors": 6, "glazing_ratio": 0.58, "wall_thickness": 140, "cost": 172000, "carbon": 275, "energy_use": 50, "daylight_factor": 5.2, "structural_weight": 2600 },
-    { "id": "design_14", "floor_area": 2580, "num_floors": 4, "glazing_ratio": 0.43, "wall_thickness": 185, "cost": 138000, "carbon": 390, "energy_use": 74, "daylight_factor": 3.9, "structural_weight": 2000 },
-    { "id": "design_15", "floor_area": 2250, "num_floors": 2, "glazing_ratio": 0.22, "wall_thickness": 260, "cost": 102000, "carbon": 510, "energy_use": 93, "daylight_factor": 2.7, "structural_weight": 1680 },
-    { "id": "design_16", "floor_area": 2750, "num_floors": 5, "glazing_ratio": 0.47, "wall_thickness": 175, "cost": 150000, "carbon": 345, "energy_use": 65, "daylight_factor": 4.4, "structural_weight": 2250 },
-    { "id": "design_17", "floor_area": 2480, "num_floors": 3, "glazing_ratio": 0.36, "wall_thickness": 205, "cost": 128000, "carbon": 430, "energy_use": 80, "daylight_factor": 3.5, "structural_weight": 1880 },
-    { "id": "design_18", "floor_area": 2950, "num_floors": 5, "glazing_ratio": 0.53, "wall_thickness": 148, "cost": 165000, "carbon": 298, "energy_use": 56, "daylight_factor": 4.9, "structural_weight": 2450 },
-    { "id": "design_19", "floor_area": 2420, "num_floors": 3, "glazing_ratio": 0.34, "wall_thickness": 208, "cost": 118000, "carbon": 455, "energy_use": 86, "daylight_factor": 3.3, "structural_weight": 1820 }
+    {
+      "id": "design_0",
+      "Glass_Transmittance": 0.6,
+      "Open_Closed_North": 0.4,
+      "Window_Area": 108.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 75.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_1",
+      "Glass_Transmittance": 0.6,
+      "Open_Closed_North": 0.5,
+      "Window_Area": 114.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 75.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_2",
+      "Glass_Transmittance": 0.6,
+      "Open_Closed_North": 0.6,
+      "Window_Area": 120.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 76.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_3",
+      "Glass_Transmittance": 0.7,
+      "Open_Closed_North": 0.4,
+      "Window_Area": 108.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 76.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_4",
+      "Glass_Transmittance": 0.7,
+      "Open_Closed_North": 0.5,
+      "Window_Area": 114.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 77.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_5",
+      "Glass_Transmittance": 0.7,
+      "Open_Closed_North": 0.6,
+      "Window_Area": 120.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 77.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_6",
+      "Glass_Transmittance": 0.8,
+      "Open_Closed_North": 0.4,
+      "Window_Area": 108.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 78.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_7",
+      "Glass_Transmittance": 0.8,
+      "Open_Closed_North": 0.5,
+      "Window_Area": 114.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 78.0,
+      "Area>50%": 91.0
+    },
+    {
+      "id": "design_8",
+      "Glass_Transmittance": 0.8,
+      "Open_Closed_North": 0.6,
+      "Window_Area": 120.0,
+      "Floor_Area": 400.0,
+      "Average_SDA": 78.0,
+      "Area>50%": 91.0
+    }
   ]
 }

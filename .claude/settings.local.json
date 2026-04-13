@@ -14,7 +14,15 @@
       "Bash(npx next:*)",
       "Bash(git reset:*)",
       "Bash(git log:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npm ls:*)",
+      "Bash(supabase --version)",
+      "Bash(git branch:*)",
+      "Bash(find /mnt/c/Users/olaf/Documents/GitHub/CC-DesignExplorer -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.md\" \\\\\\) -exec grep -l \"Canvas\\\\|useGLTF\\\\|R3F\\\\|react-three\" {} \\\\;)",
+      "Bash(grep -r \"react-three\\\\|drei\\\\|Canvas\\\\|useGLTF\\\\|useFrame\" /mnt/c/Users/olaf/Documents/GitHub/CC-DesignExplorer --include=\"*.tsx\" --include=\"*.ts\" --include=\"*.jsx\" --include=\"*.js\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")",
+      "Bash(git stash:*)",
+      "Bash(curl -L -o /mnt/c/Users/olaf/Documents/GitHub/CC-DesignExplorer/public/hdri/kloofendal_overcast.hdr \"https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_48d_partly_cloudy_puresky_1k.hdr\")",
+      "Bash(curl -L -o /mnt/c/Users/olaf/Documents/GitHub/CC-DesignExplorer/public/hdri/potsdamer_platz.hdr \"https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/potsdamer_platz_1k.hdr\")"
     ]
   }
 }
