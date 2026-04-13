@@ -15,6 +15,8 @@ export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
   wireframe: false,
   opacity: 1.0,
   doubleSided: true,
+  environmentPreset: 'none',
+  environmentIntensity: 1.0,
 }
 
 function loadProfilesFromStorage(): ViewerProfile[] {
@@ -63,7 +65,7 @@ export const createViewerSettingsSlice: StateCreator<AppStore, [], [], ViewerSet
   loadProfile: (id) => {
     const profile = get().viewerProfiles.find((p) => p.id === id)
     if (profile) {
-      set({ viewerSettings: { ...profile.settings } })
+      set({ viewerSettings: { ...DEFAULT_VIEWER_SETTINGS, ...profile.settings } })
     }
   },
 

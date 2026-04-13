@@ -255,6 +255,33 @@ export function ViewerSettingsPanel({
 
       {/* Lighting */}
       <Section title="Lighting">
+        <div className="space-y-1">
+          <Label className="text-xs">Environment</Label>
+          <Select
+            value={settings.environmentPreset}
+            onValueChange={(v) => set({ environmentPreset: v as typeof settings.environmentPreset })}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None (Manual lights)</SelectItem>
+              <SelectItem value="studio">Studio</SelectItem>
+              <SelectItem value="overcast">Overcast</SelectItem>
+              <SelectItem value="urban">Urban</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {settings.environmentPreset !== 'none' && (
+          <SliderRow
+            label="Environment Intensity"
+            value={settings.environmentIntensity}
+            min={0}
+            max={3}
+            step={0.05}
+            onChange={(v) => set({ environmentIntensity: v })}
+          />
+        )}
         <SliderRow
           label="Ambient"
           value={settings.ambientIntensity}

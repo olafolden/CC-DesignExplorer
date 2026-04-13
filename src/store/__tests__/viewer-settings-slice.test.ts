@@ -51,6 +51,33 @@ describe('ViewerSettingsSlice', () => {
     })
   })
 
+  describe('environment defaults', () => {
+    it('has environmentPreset of "none"', () => {
+      expect(useAppStore.getState().viewerSettings.environmentPreset).toBe('none')
+    })
+
+    it('has environmentIntensity of 1.0', () => {
+      expect(useAppStore.getState().viewerSettings.environmentIntensity).toBe(1.0)
+    })
+
+    it('setViewerSettings updates environmentPreset', () => {
+      useAppStore.getState().setViewerSettings({ environmentPreset: 'studio' })
+      expect(useAppStore.getState().viewerSettings.environmentPreset).toBe('studio')
+    })
+
+    it('setViewerSettings updates environmentIntensity', () => {
+      useAppStore.getState().setViewerSettings({ environmentIntensity: 2.5 })
+      expect(useAppStore.getState().viewerSettings.environmentIntensity).toBe(2.5)
+    })
+
+    it('resetViewerSettings restores environment defaults', () => {
+      useAppStore.getState().setViewerSettings({ environmentPreset: 'urban', environmentIntensity: 2.0 })
+      useAppStore.getState().resetViewerSettings()
+      expect(useAppStore.getState().viewerSettings.environmentPreset).toBe('none')
+      expect(useAppStore.getState().viewerSettings.environmentIntensity).toBe(1.0)
+    })
+  })
+
   describe('profiles', () => {
     it('initializes with empty viewerProfiles', () => {
       expect(useAppStore.getState().viewerProfiles).toEqual([])
@@ -121,6 +148,52 @@ describe('ViewerSettingsSlice', () => {
         STORAGE_KEY,
         '[]'
       )
+    })
+
+    it('profiles save and restore environment settings', () => {
+      useAppStore.getState().setViewerSettings({ environmentPreset: 'overcast', environmentIntensity: 2.0 })
+      useAppStore.getState().saveProfile('Env Profile')
+
+      useAppStore.getState().setViewerSettings({ environmentPreset: 'none', environmentIntensity: 1.0 })
+
+      const profileId = useAppStore.getState().viewerProfiles[0].id
+      useAppStore.getState().loadProfile(profileId)
+
+      expect(useAppStore.getState().viewerSettings.environmentPreset).toBe('overcast')
+      expect(useAppStore.getState().viewerSettings.environmentIntensity).toBe(2.0)
+    })
+
+    it('loadProfile fills missing fields with defaults (backward compat)', () => {
+      // Simulate an old profile that doesn't have environmentPreset
+      const oldProfile = {
+        id: 'old-profile',
+        name: 'Old Profile',
+        settings: {
+          backgroundColor: '#000000',
+          gridVisible: true,
+          gridSize: 4,
+          ambientIntensity: 0.5,
+          directionalIntensity: 1.0,
+          exposure: 2.0,
+          autoRotate: true,
+          fov: 60,
+          wireframe: false,
+          opacity: 0.8,
+          doubleSided: true,
+          // Note: no environmentPreset or environmentIntensity
+        },
+      }
+      useAppStore.setState({ viewerProfiles: [oldProfile as never] })
+
+      useAppStore.getState().loadProfile('old-profile')
+
+      const s = useAppStore.getState().viewerSettings
+      // Old settings should be applied
+      expect(s.backgroundColor).toBe('#000000')
+      expect(s.fov).toBe(60)
+      // Missing fields should get defaults
+      expect(s.environmentPreset).toBe('none')
+      expect(s.environmentIntensity).toBe(1.0)
     })
 
     it('multiple profiles are preserved independently', () => {
