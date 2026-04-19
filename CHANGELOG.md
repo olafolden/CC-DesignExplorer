@@ -4,6 +4,13 @@
 
 ## v2: Next.js Migration
 
+### Dependency Cleanup: R3F / Vite Remnants (2026-04-19)
+- Removed obsolete npm dependencies: `@react-three/fiber`, `@react-three/drei`, `three`, `@types/three`, `eslint-plugin-react-refresh` (52 packages pruned from `node_modules`)
+- Removed `serverExternalPackages: ['three']` from `next.config.ts` (no longer needed after `three` uninstall)
+- Viewer continues to load Three.js via CDN import-map in `public/viewer.html` (`three@0.170.0` from jsdelivr) — unaffected by the npm removal
+- No source files needed deletion; prior migrations had already removed Vite SPA entry points and R3F components
+- Verified via `npm run typecheck`, `npm run lint`, `npm run build` — all clean
+
 ### Sun Path Visualization (2026-04-13)
 - Solar position computed via SunCalc library in React, sent to iframe viewer
 - `computeSunPath()` utility (`src/lib/sun-path.ts`): date/time/lat/lng → position, arc, altitude, azimuth
